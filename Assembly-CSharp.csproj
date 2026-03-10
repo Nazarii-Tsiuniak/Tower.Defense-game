@@ -58,8 +58,13 @@
     <Compile Include="Assets\_Project\Scripts\TowerData.cs" />
     <Compile Include="Assets\_Project\Scripts\WaypointPath.cs" />
     <Compile Include="Assets\_Project\Scripts\ObjectPooler.cs" />
+    <Compile Include="Assets\_Project\Scripts\Logic\WaypointPath.cs" />
     <Compile Include="Assets\_Project\Scripts\EnemyMovement.cs" />
+    <Compile Include="Assets\_Project\Scripts\Data\TowerData.cs" />
+    <Compile Include="Assets\_Project\Scripts\Data\EnemyData.cs" />
     <Compile Include="Assets\_Project\Scripts\EnemyData.cs" />
+    <Compile Include="Assets\_Project\Scripts\Logic\EnemyMovement.cs" />
+    <Compile Include="Assets\_Project\Scripts\Logic\ObjectPooler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
