@@ -56,7 +56,9 @@ public class WaveSpawner : MonoBehaviour
         GameObject enemy = ObjectPooler.Instance.SpawnFromPool(enemyPrefabs[index], spawnPos, Quaternion.identity);
 
         // Initialize enemy health from data
-        var movement = enemy.GetComponentInChildren<EnemyMovement>();
+        var movement = enemy.GetComponent<EnemyMovement>();
+        if (movement == null)
+            movement = enemy.GetComponentInChildren<EnemyMovement>();
         if (movement != null && movement.data != null)
         {
             var health = enemy.GetComponent<EnemyHealth>();

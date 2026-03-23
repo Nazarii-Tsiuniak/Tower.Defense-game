@@ -36,6 +36,6 @@ public class EnemyHealth : MonoBehaviour
     {
         if (GameManager.Instance != null)
             GameManager.Instance.EarnGold(reward);
-        ObjectPooler.Instance.ReturnToPool(gameObject);
+        ObjectPooler.Instance.ReturnToPool(transform.root.gameObject);
     }
 }

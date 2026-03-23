@@ -151,7 +151,6 @@ public class SceneBuilder : MonoBehaviour
         // Name label
         CreateNameLabel(enemy.transform, data.enemyName, color);
 
-        enemy.SetActive(false); // Keep deactivated as a template
         return enemy;
     }
 
