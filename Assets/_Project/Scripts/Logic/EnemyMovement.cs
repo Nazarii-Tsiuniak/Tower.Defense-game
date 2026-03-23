@@ -2,29 +2,36 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    public EnemyData data; // ѕризначаЇтьс€ в ≥нспектор≥ префаба
+    public EnemyData data;
     private int wavePointIndex = 0;
+
+    void OnEnable()
+    {
+        wavePointIndex = 0;
+    }
 
     void Update()
     {
-        // ѕерев≥рка, чи ≥н≥ц≥ал≥зовано шл€х
+        if (data == null) return;
         if (WaypointPath.Points == null || wavePointIndex >= WaypointPath.Points.Length) return;
 
         Transform target = WaypointPath.Points[wavePointIndex];
+        Transform root = transform.root;
 
-        // –ух зг≥дно з “« (Vector3.MoveTowards)
-        transform.position = Vector3.MoveTowards(transform.position, target.position, data.speed * Time.deltaTime);
+        root.position = Vector3.MoveTowards(
+            root.position, target.position, data.speed * Time.deltaTime);
 
-        // якщо п≥д≥йшли близько до точки - перемикаЇмо на наступну
-        if (Vector3.Distance(transform.position, target.position) <= 0.1f)
+        if (Vector3.Distance(root.position, target.position) <= 0.1f)
         {
             wavePointIndex++;
         }
 
-        // якщо шл€х зак≥нчено - повертаЇмо в пул (база отримала шкоду)
         if (wavePointIndex >= WaypointPath.Points.Length)
         {
-            ObjectPooler.Instance.ReturnToPool(gameObject);
+            if (GameManager.Instance != null)
+                GameManager.Instance.LoseLife();
+
+            ObjectPooler.Instance.ReturnToPool(root.gameObject);
         }
     }
 }
