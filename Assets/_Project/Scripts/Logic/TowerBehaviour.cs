@@ -61,9 +61,17 @@ public class TowerBehaviour : MonoBehaviour
         proj.Initialize(target, data.damage);
 
         var sr = projObj.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteGenerator.CreateCircle(8, Color.yellow);
+        Color projColor;
+        if (data.towerName != null && data.towerName.Contains("Mage"))
+            projColor = new Color(0.7f, 0.3f, 1f);
+        else if (data.towerName != null && data.towerName.Contains("Cannon"))
+            projColor = new Color(0.9f, 0.4f, 0.1f);
+        else
+            projColor = new Color(1f, 0.9f, 0.3f);
+
+        sr.sprite = SpriteGenerator.CreateCartoonProjectile(12, projColor);
         sr.sortingOrder = 3;
-        projObj.transform.localScale = Vector3.one * 0.3f;
+        projObj.transform.localScale = Vector3.one * 0.35f;
     }
 
     void OnDrawGizmosSelected()

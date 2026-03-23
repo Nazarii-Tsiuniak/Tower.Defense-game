@@ -17,11 +17,10 @@ public class TowerPlacement : MonoBehaviour
 
         if (spriteRenderer.sprite == null)
         {
-            spriteRenderer.sprite = SpriteGenerator.CreateCircle(32, new Color(0.9f, 0.9f, 0.3f, 0.5f));
+            spriteRenderer.sprite = SpriteGenerator.CreateStonePlatform(48);
         }
-        spriteRenderer.sortingOrder = 0;
+        spriteRenderer.sortingOrder = -3;
 
-        // Add collider for mouse clicks
         var collider = GetComponent<BoxCollider2D>();
         if (collider == null)
         {
@@ -49,7 +48,7 @@ public class TowerPlacement : MonoBehaviour
     {
         if (!isOccupied && spriteRenderer != null)
         {
-            spriteRenderer.color = new Color(1f, 1f, 0.5f, 0.8f);
+            spriteRenderer.color = new Color(1f, 1f, 0.7f, 1f);
         }
     }
 
@@ -72,30 +71,43 @@ public class TowerPlacement : MonoBehaviour
         sr.sortingOrder = 2;
 
         Color towerColor;
+        string towerType;
         if (data.towerName.Contains("Archer"))
+        {
             towerColor = new Color(0.85f, 0.65f, 0.13f);
+            towerType = "archer";
+        }
         else if (data.towerName.Contains("Cannon"))
-            towerColor = new Color(0.45f, 0.45f, 0.5f);
+        {
+            towerColor = new Color(0.50f, 0.50f, 0.55f);
+            towerType = "cannon";
+        }
         else if (data.towerName.Contains("Mage"))
-            towerColor = new Color(0.58f, 0.27f, 0.85f);
+        {
+            towerColor = new Color(0.55f, 0.25f, 0.80f);
+            towerType = "mage";
+        }
         else
+        {
             towerColor = Color.gray;
+            towerType = "archer";
+        }
 
-        sr.sprite = SpriteGenerator.CreateDiamond(32, towerColor);
+        sr.sprite = SpriteGenerator.CreateCartoonTower(48, towerColor, towerType);
 
         var tower = towerObj.AddComponent<TowerBehaviour>();
         tower.data = data;
 
-        // Add range indicator
+        // Range indicator — soft cartoon circle
         var rangeObj = new GameObject("RangeIndicator");
         rangeObj.transform.SetParent(towerObj.transform);
         rangeObj.transform.localPosition = Vector3.zero;
         var rangeSr = rangeObj.AddComponent<SpriteRenderer>();
-        rangeSr.sprite = SpriteGenerator.CreateCircle(32, new Color(1f, 0f, 0f, 0.08f));
+        rangeSr.sprite = SpriteGenerator.CreateCartoonCircle(32, new Color(1f, 1f, 1f, 0.08f));
         rangeSr.sortingOrder = -1;
         rangeObj.transform.localScale = Vector3.one * data.range * 2;
 
         // Dim the placement spot
-        spriteRenderer.color = new Color(0.4f, 0.4f, 0.4f, 0.3f);
+        spriteRenderer.color = new Color(0.5f, 0.5f, 0.5f, 0.35f);
     }
 }
