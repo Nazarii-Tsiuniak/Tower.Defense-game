@@ -48,7 +48,11 @@ public class WaveSpawner : MonoBehaviour
     void SpawnEnemy()
     {
         if (enemyPrefabs == null || enemyPrefabs.Length == 0) return;
-        if (WaypointPath.Points == null || WaypointPath.Points.Length == 0) return;
+        if (WaypointPath.Points == null || WaypointPath.Points.Length == 0)
+        {
+            Debug.LogWarning("WaveSpawner: WaypointPath.Points is empty, cannot spawn enemies.");
+            return;
+        }
 
         int index = Random.Range(0, enemyPrefabs.Length);
         Vector3 spawnPos = WaypointPath.Points[0].position;

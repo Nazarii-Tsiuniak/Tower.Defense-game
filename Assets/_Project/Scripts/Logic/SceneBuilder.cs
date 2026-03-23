@@ -42,7 +42,6 @@ public class SceneBuilder : MonoBehaviour
     void CreateWaypointPath()
     {
         var pathObj = new GameObject("WaypointPath");
-        pathObj.AddComponent<WaypointPath>();
 
         Vector3[] positions = new Vector3[]
         {
@@ -60,6 +59,9 @@ public class SceneBuilder : MonoBehaviour
             wp.transform.SetParent(pathObj.transform);
             wp.transform.position = positions[i];
         }
+
+        // Add WaypointPath AFTER children exist so Awake() finds them
+        pathObj.AddComponent<WaypointPath>();
 
         for (int i = 0; i < positions.Length - 1; i++)
             CreatePathSegment(positions[i], positions[i + 1], i);

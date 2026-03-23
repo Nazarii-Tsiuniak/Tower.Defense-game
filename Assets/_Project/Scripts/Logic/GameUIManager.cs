@@ -62,11 +62,11 @@ public class GameUIManager : MonoBehaviour
         int initWave = GameManager.Instance != null ? GameManager.Instance.currentWave : 0;
 
         livesText = CreateLabel(topBar.transform, "LivesText",
-            "\u2764 Lives: " + initLives, new Color(1f, 0.35f, 0.35f), 24);
+            "Lives: " + initLives, new Color(1f, 0.35f, 0.35f), 24);
         goldText = CreateLabel(topBar.transform, "GoldText",
-            "\uD83D\uDCB0 Gold: " + initGold, new Color(1f, 0.85f, 0.15f), 24);
+            "Gold: " + initGold, new Color(1f, 0.85f, 0.15f), 24);
         waveText = CreateLabel(topBar.transform, "WaveText",
-            "\u2694 Wave: " + initWave, new Color(0.55f, 0.85f, 1f), 24);
+            "Wave: " + initWave, new Color(0.55f, 0.85f, 1f), 24);
     }
 
     void CreateTowerPanel(Transform parent)
@@ -86,7 +86,7 @@ public class GameUIManager : MonoBehaviour
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = true;
 
-        CreateLabel(towerPanel.transform, "TowerTitle", "\uD83C\uDFF0 Towers:", Color.white, 22);
+        CreateLabel(towerPanel.transform, "TowerTitle", "Towers:", Color.white, 22);
 
         if (availableTowers != null)
         {
@@ -118,6 +118,12 @@ public class GameUIManager : MonoBehaviour
         var btnRect = btnObj.GetComponent<RectTransform>();
         btnRect.sizeDelta = new Vector2(170, 58);
 
+        // Ensure the layout system respects button size
+        var layoutElement = btnObj.AddComponent<UnityEngine.UI.LayoutElement>();
+        layoutElement.preferredWidth = 170;
+        layoutElement.preferredHeight = 58;
+        layoutElement.minWidth = 120;
+
         // Outline frame
         var outline = btnObj.AddComponent<Outline>();
         outline.effectColor = new Color(1f, 1f, 1f, 0.3f);
@@ -126,7 +132,7 @@ public class GameUIManager : MonoBehaviour
         var labelObj = new GameObject("Label");
         labelObj.transform.SetParent(btnObj.transform, false);
         var text = labelObj.AddComponent<Text>();
-        text.text = GetTowerEmoji(data.towerName) + " " + data.towerName + "\n$" + data.cost;
+        text.text = GetTowerLabel(data.towerName) + " " + data.towerName + "\n$" + data.cost;
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = 17;
         text.color = Color.white;
@@ -157,12 +163,12 @@ public class GameUIManager : MonoBehaviour
         return new Color(0.3f, 0.3f, 0.4f);
     }
 
-    string GetTowerEmoji(string name)
+    string GetTowerLabel(string name)
     {
-        if (name.Contains("Archer")) return "\uD83C\uDFF9";
-        if (name.Contains("Cannon")) return "\uD83D\uDCA3";
-        if (name.Contains("Mage")) return "\u2728";
-        return "\uD83C\uDFF0";
+        if (name.Contains("Archer")) return "[A]";
+        if (name.Contains("Cannon")) return "[C]";
+        if (name.Contains("Mage")) return "[M]";
+        return "[T]";
     }
 
     void HighlightButton(Transform parent, GameObject selected)
@@ -226,8 +232,8 @@ public class GameUIManager : MonoBehaviour
     void UpdateUI()
     {
         if (GameManager.Instance == null) return;
-        if (livesText != null) livesText.text = "\u2764 Lives: " + GameManager.Instance.lives;
-        if (goldText != null) goldText.text = "\uD83D\uDCB0 Gold: " + GameManager.Instance.gold;
-        if (waveText != null) waveText.text = "\u2694 Wave: " + GameManager.Instance.currentWave;
+        if (livesText != null) livesText.text = "Lives: " + GameManager.Instance.lives;
+        if (goldText != null) goldText.text = "Gold: " + GameManager.Instance.gold;
+        if (waveText != null) waveText.text = "Wave: " + GameManager.Instance.currentWave;
     }
 }

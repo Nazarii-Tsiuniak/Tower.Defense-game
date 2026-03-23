@@ -21,6 +21,7 @@ public class ObjectPooler : MonoBehaviour
         {
             GameObject obj = Instantiate(prefab, position, rotation);
             obj.name = key;
+            obj.SetActive(true);
             return obj;
         }
 
