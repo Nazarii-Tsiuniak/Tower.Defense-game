@@ -205,11 +205,11 @@ public static class SpriteGenerator
         for (int i = 0; i < w * h / 60; i++)
         {
             int gx = Random.Range(2, w - 2);
-            int gy2 = Random.Range(2, h - 2);
+            int tuftY = Random.Range(2, h - 2);
             Color tuft = new Color(0.45f, 0.78f, 0.35f, 1f);
-            px[gy2 * w + gx] = tuft;
-            if (gx + 1 < w) px[gy2 * w + gx + 1] = tuft;
-            if (gy2 + 1 < h) px[(gy2 + 1) * w + gx] = tuft;
+            px[tuftY * w + gx] = tuft;
+            if (gx + 1 < w) px[tuftY * w + gx + 1] = tuft;
+            if (tuftY + 1 < h) px[(tuftY + 1) * w + gx] = tuft;
         }
 
         Random.state = prev;

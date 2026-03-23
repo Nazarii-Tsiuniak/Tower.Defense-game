@@ -57,9 +57,16 @@ public class GameUIManager : MonoBehaviour
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = true;
 
-        livesText = CreateLabel(topBar.transform, "LivesText", "\u2764 Lives: 20", new Color(1f, 0.35f, 0.35f), 24);
-        goldText = CreateLabel(topBar.transform, "GoldText", "\uD83D\uDCB0 Gold: 100", new Color(1f, 0.85f, 0.15f), 24);
-        waveText = CreateLabel(topBar.transform, "WaveText", "\u2694 Wave: 0", new Color(0.55f, 0.85f, 1f), 24);
+        int initLives = GameManager.Instance != null ? GameManager.Instance.lives : 20;
+        int initGold = GameManager.Instance != null ? GameManager.Instance.gold : 100;
+        int initWave = GameManager.Instance != null ? GameManager.Instance.currentWave : 0;
+
+        livesText = CreateLabel(topBar.transform, "LivesText",
+            "\u2764 Lives: " + initLives, new Color(1f, 0.35f, 0.35f), 24);
+        goldText = CreateLabel(topBar.transform, "GoldText",
+            "\uD83D\uDCB0 Gold: " + initGold, new Color(1f, 0.85f, 0.15f), 24);
+        waveText = CreateLabel(topBar.transform, "WaveText",
+            "\u2694 Wave: " + initWave, new Color(0.55f, 0.85f, 1f), 24);
     }
 
     void CreateTowerPanel(Transform parent)
