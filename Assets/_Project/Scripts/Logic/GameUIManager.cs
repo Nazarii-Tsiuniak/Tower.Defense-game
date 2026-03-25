@@ -209,7 +209,7 @@ public class GameUIManager : MonoBehaviour
             btn.onClick.AddListener(() => SelectTower(TowerInfos[idx].key));
             towerButtons[i] = btn;
 
-            string label = info.displayName + " " + info.cost + "з";
+            string label = info.displayName + " " + info.cost + " зол.";
             CreateText(btnGO.transform, "Label", label,
                 Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f),
                 Vector2.zero, Vector2.zero, 14, Color.white);
@@ -323,7 +323,7 @@ public class GameUIManager : MonoBehaviour
 
             // Add button
             var addBtnGO = CreateButton(attackerPanel.transform, "Add_" + info.key,
-                "+ " + info.displayName + " (" + info.cost + " ок.)",
+                "+ " + info.displayName + " (" + info.cost + " очок)",
                 new Vector2(0.35f, yPos), new Vector2(260, 45),
                 new Color(0.25f, 0.50f, 0.25f));
             addBtnGO.GetComponent<Button>().onClick.AddListener(() => AddEnemyToWave(idx));

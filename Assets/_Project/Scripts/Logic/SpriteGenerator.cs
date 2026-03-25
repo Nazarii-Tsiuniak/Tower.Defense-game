@@ -221,18 +221,6 @@ public static class SpriteGenerator
         return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
     }
 
-    static void DrawLetter(Texture2D tex, int startX, int startY, char c, Color color)
-    {
-        bool[,] pixels = GetLetterPixels(c);
-        if (pixels == null) return;
-        int w = pixels.GetLength(0);
-        int h = pixels.GetLength(1);
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-                if (pixels[x, y])
-                    tex.SetPixel(startX + x, startY + (h - 1 - y), color);
-    }
-
     public static Sprite CreateTreeSprite()
     {
         int s = 32;
