@@ -1,19 +1,23 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
-public enum GameState { Preparation, Battle, RoundEnd, GameOver }
+public enum GameState { Menu, Preparation, AttackerTurn, Battle, RoundEnd, GameOver }
+public enum GameMode { SinglePlayer, HotSeat }
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
     public GameState State { get; private set; }
+    public GameMode Mode { get; private set; }
     public int Gold { get; private set; }
     public int BaseHP { get; private set; }
     public int MaxBaseHP { get; private set; }
     public int Round { get; private set; }
     public int AttackBudget { get; private set; }
     public bool DefenderWon { get; private set; }
+    public int LastBonusGold { get; private set; }
 
     public const int MaxRounds = 10;
     public const int StartGold = 300;
@@ -31,6 +35,12 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        SetState(GameState.Menu);
+    }
+
+    public void StartGame(GameMode mode)
+    {
+        Mode = mode;
         StartNewGame();
     }
 
@@ -42,14 +52,32 @@ public class GameManager : MonoBehaviour
         Round = 1;
         AttackBudget = StartAttackBudget;
         DefenderWon = false;
-        SetState(GameState.Preparation);
+        LastBonusGold = 0;
         OnStatsChanged?.Invoke();
+        SetState(GameState.Preparation);
     }
 
     public void StartBattle()
     {
-        if (State != GameState.Preparation) return;
-        SetState(GameState.Battle);
+        if (State == GameState.Preparation)
+        {
+            if (Mode == GameMode.HotSeat)
+            {
+                SetState(GameState.AttackerTurn);
+                return;
+            }
+            SetState(GameState.Battle);
+        }
+        else if (State == GameState.AttackerTurn)
+        {
+            SetState(GameState.Battle);
+        }
+    }
+
+    public void LaunchWave(List<AIAttacker.EnemyWaveEntry> wave)
+    {
+        if (WaveSpawner.Instance != null)
+            WaveSpawner.Instance.SpawnWave(wave);
     }
 
     public void EnemyReachedBase()
@@ -96,9 +124,12 @@ public class GameManager : MonoBehaviour
 
         if (newState == GameState.Battle)
         {
-            var wave = AIAttacker.FormWave(AttackBudget, Round);
-            if (WaveSpawner.Instance != null)
-                WaveSpawner.Instance.SpawnWave(wave);
+            if (Mode == GameMode.SinglePlayer)
+            {
+                var wave = AIAttacker.FormWave(AttackBudget, Round);
+                LaunchWave(wave);
+            }
+            // In HotSeat, wave is launched from GameUIManager after attacker submits
         }
         else if (newState == GameState.RoundEnd)
         {
@@ -115,8 +146,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        int bonusGold = 20 + Round * 5;
-        AddGold(bonusGold);
+        LastBonusGold = 20 + Round * 5;
+        AddGold(LastBonusGold);
 
         Round++;
         AttackBudget += BudgetIncreasePerRound;
@@ -129,6 +160,12 @@ public class GameManager : MonoBehaviour
         }
 
         OnStatsChanged?.Invoke();
-        SetState(GameState.Preparation);
+        // Delay transition to Preparation so RoundEnd panel is shown
+    }
+
+    public void ContinueAfterRoundEnd()
+    {
+        if (State == GameState.RoundEnd)
+            SetState(GameState.Preparation);
     }
 }

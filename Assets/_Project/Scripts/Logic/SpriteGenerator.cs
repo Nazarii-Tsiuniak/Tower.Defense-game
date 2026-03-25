@@ -233,6 +233,112 @@ public static class SpriteGenerator
                     tex.SetPixel(startX + x, startY + (h - 1 - y), color);
     }
 
+    public static Sprite CreateTreeSprite()
+    {
+        int s = 32;
+        var tex = new Texture2D(s, s);
+        tex.filterMode = FilterMode.Point;
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+                tex.SetPixel(x, y, Color.clear);
+
+        // Trunk
+        Color trunk = new Color(0.45f, 0.30f, 0.15f);
+        for (int y = 0; y < 10; y++)
+            for (int x = 14; x <= 17; x++)
+                tex.SetPixel(x, y, trunk);
+
+        // Foliage (circle)
+        Color leaf1 = new Color(0.20f, 0.55f, 0.15f);
+        Color leaf2 = new Color(0.25f, 0.65f, 0.20f);
+        float cx = 16, cy = 20;
+        var rng = new System.Random(77);
+        for (int y = 10; y < s; y++)
+            for (int x = 6; x < 26; x++)
+            {
+                float dx = x - cx;
+                float dy = y - cy;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                if (dist < 9)
+                    tex.SetPixel(x, y, rng.NextDouble() < 0.4 ? leaf2 : leaf1);
+                else if (dist < 10)
+                    tex.SetPixel(x, y, new Color(0.15f, 0.40f, 0.10f));
+            }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
+    }
+
+    public static Sprite CreateBushSprite()
+    {
+        int s = 20;
+        var tex = new Texture2D(s, s);
+        tex.filterMode = FilterMode.Point;
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+                tex.SetPixel(x, y, Color.clear);
+
+        Color bush1 = new Color(0.25f, 0.58f, 0.18f);
+        Color bush2 = new Color(0.30f, 0.68f, 0.22f);
+        float cx = 10, cy = 8;
+        var rng = new System.Random(55);
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                float dx = x - cx;
+                float dy = (y - cy) * 1.3f;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                if (dist < 7)
+                    tex.SetPixel(x, y, rng.NextDouble() < 0.3 ? bush2 : bush1);
+                else if (dist < 8)
+                    tex.SetPixel(x, y, new Color(0.18f, 0.45f, 0.12f));
+            }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
+    }
+
+    public static Sprite CreateFlowerSprite()
+    {
+        int s = 12;
+        var tex = new Texture2D(s, s);
+        tex.filterMode = FilterMode.Point;
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+                tex.SetPixel(x, y, Color.clear);
+
+        // Stem
+        tex.SetPixel(5, 0, new Color(0.2f, 0.5f, 0.15f));
+        tex.SetPixel(5, 1, new Color(0.2f, 0.5f, 0.15f));
+        tex.SetPixel(5, 2, new Color(0.2f, 0.5f, 0.15f));
+        tex.SetPixel(6, 0, new Color(0.2f, 0.5f, 0.15f));
+        tex.SetPixel(6, 1, new Color(0.2f, 0.5f, 0.15f));
+        tex.SetPixel(6, 2, new Color(0.2f, 0.5f, 0.15f));
+
+        // Petals
+        Color petal = new Color(0.95f, 0.75f, 0.2f);
+        Color center = new Color(0.85f, 0.3f, 0.2f);
+        tex.SetPixel(5, 5, center); tex.SetPixel(6, 5, center);
+        tex.SetPixel(5, 6, center); tex.SetPixel(6, 6, center);
+        tex.SetPixel(4, 5, petal); tex.SetPixel(7, 5, petal);
+        tex.SetPixel(5, 4, petal); tex.SetPixel(6, 7, petal);
+        tex.SetPixel(4, 6, petal); tex.SetPixel(7, 6, petal);
+        tex.SetPixel(5, 7, petal); tex.SetPixel(6, 4, petal);
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
+    }
+
+    static void DrawLetter(Texture2D tex, int startX, int startY, char c, Color color)
+    {
+        bool[,] pixels = GetLetterPixels(c);
+        if (pixels == null) return;
+        int w = pixels.GetLength(0);
+        int h = pixels.GetLength(1);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (pixels[x, y])
+                    tex.SetPixel(startX + x, startY + (h - 1 - y), color);
+    }
+
     static bool[,] GetLetterPixels(char c)
     {
         switch (c)

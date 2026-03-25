@@ -11,6 +11,7 @@ public class SceneBuilder : MonoBehaviour
         EnsureObjectPooler();
         CreateManagers();
         CreateGrid();
+        CreateDecorations();
         CreateWaypointPath();
         CreateEnemyTemplates();
     }
@@ -85,6 +86,46 @@ public class SceneBuilder : MonoBehaviour
                     sr.sprite = pathSprite;
                 else
                     sr.sprite = grassSprite;
+            }
+        }
+    }
+
+    void CreateDecorations()
+    {
+        if (GridManager.Instance == null) return;
+
+        Sprite treeSprite = SpriteGenerator.CreateTreeSprite();
+        Sprite bushSprite = SpriteGenerator.CreateBushSprite();
+        Sprite flowerSprite = SpriteGenerator.CreateFlowerSprite();
+
+        var decoParent = new GameObject("Decorations");
+        var rng = new System.Random(123);
+
+        for (int col = 0; col < GridManager.Cols; col++)
+        {
+            for (int row = 0; row < GridManager.Rows; row++)
+            {
+                if (GridManager.Instance.IsPath(col, row)) continue;
+                if (rng.NextDouble() > 0.18) continue;
+
+                Vector3 pos = GridManager.CellToWorld(col, row);
+                pos.x += (float)(rng.NextDouble() - 0.5) * 0.3f;
+                pos.y += (float)(rng.NextDouble() - 0.5) * 0.3f;
+
+                var decoGO = new GameObject("Deco_" + col + "_" + row);
+                decoGO.transform.SetParent(decoParent.transform);
+                decoGO.transform.position = pos;
+
+                var sr = decoGO.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = 1;
+
+                float roll = (float)rng.NextDouble();
+                if (roll < 0.35f)
+                    sr.sprite = treeSprite;
+                else if (roll < 0.65f)
+                    sr.sprite = bushSprite;
+                else
+                    sr.sprite = flowerSprite;
             }
         }
     }
