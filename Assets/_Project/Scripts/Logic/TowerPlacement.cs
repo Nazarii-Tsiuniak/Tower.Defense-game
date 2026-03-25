@@ -87,6 +87,27 @@ public class TowerPlacement : MonoBehaviour
             previewGO.SetActive(false);
     }
 
+    // Centralized tower configuration
+    public struct TowerStats
+    {
+        public float damage;
+        public float range;
+        public float fireRate;
+        public AttackType attackType;
+        public float slowAmount;
+        public float slowDuration;
+        public float aoeRadius;
+    }
+
+    static readonly System.Collections.Generic.Dictionary<string, TowerStats> TowerConfigs =
+        new System.Collections.Generic.Dictionary<string, TowerStats>
+    {
+        { "Archer",  new TowerStats { damage = 20, range = 3.0f, fireRate = 0.8f, attackType = AttackType.Single } },
+        { "Mage",    new TowerStats { damage = 15, range = 2.5f, fireRate = 0.4f, attackType = AttackType.AoE, aoeRadius = 1.5f } },
+        { "Freezer", new TowerStats { damage = 3,  range = 3.0f, fireRate = 0.7f, attackType = AttackType.Slow, slowAmount = 0.5f, slowDuration = 2.0f } },
+        { "Cannon",  new TowerStats { damage = 80, range = 4.0f, fireRate = 0.2f, attackType = AttackType.Single } }
+    };
+
     void PlaceTower(Vector3 position, Vector2Int cell, string towerType, int cost)
     {
         if (!GameManager.Instance.SpendGold(cost)) return;
@@ -101,53 +122,23 @@ public class TowerPlacement : MonoBehaviour
         sr.sortingOrder = 5;
 
         var ctrl = tower.AddComponent<TowerController>();
-        ApplyTowerStats(ctrl, towerType);
-    }
-
-    void ApplyTowerStats(TowerController ctrl, string towerType)
-    {
-        ctrl.towerName = towerType;
-        switch (towerType)
+        if (TowerConfigs.TryGetValue(towerType, out TowerStats stats))
         {
-            case "Archer":
-                ctrl.damage = 20;
-                ctrl.range = 3.0f;
-                ctrl.fireRate = 0.8f;
-                ctrl.attackType = AttackType.Single;
-                break;
-            case "Mage":
-                ctrl.damage = 15;
-                ctrl.range = 2.5f;
-                ctrl.fireRate = 0.4f;
-                ctrl.attackType = AttackType.AoE;
-                ctrl.aoeRadius = 1.5f;
-                break;
-            case "Freezer":
-                ctrl.damage = 3;
-                ctrl.range = 3.0f;
-                ctrl.fireRate = 0.7f;
-                ctrl.attackType = AttackType.Slow;
-                ctrl.slowAmount = 0.5f;
-                ctrl.slowDuration = 2.0f;
-                break;
-            case "Cannon":
-                ctrl.damage = 80;
-                ctrl.range = 4.0f;
-                ctrl.fireRate = 0.2f;
-                ctrl.attackType = AttackType.Single;
-                break;
+            ctrl.towerName = towerType;
+            ctrl.damage = stats.damage;
+            ctrl.range = stats.range;
+            ctrl.fireRate = stats.fireRate;
+            ctrl.attackType = stats.attackType;
+            ctrl.slowAmount = stats.slowAmount;
+            ctrl.slowDuration = stats.slowDuration;
+            ctrl.aoeRadius = stats.aoeRadius;
         }
     }
 
     float GetTowerRange(string towerType)
     {
-        switch (towerType)
-        {
-            case "Archer":  return 3.0f;
-            case "Mage":    return 2.5f;
-            case "Freezer": return 3.0f;
-            case "Cannon":  return 4.0f;
-            default:        return 3.0f;
-        }
+        if (TowerConfigs.TryGetValue(towerType, out TowerStats stats))
+            return stats.range;
+        return 3.0f;
     }
 }

@@ -38,7 +38,10 @@ public class ObjectPooler : MonoBehaviour
     {
         obj.SetActive(false);
         if (!poolDictionary.ContainsKey(obj.name))
+        {
+            Debug.LogWarning("ObjectPooler: returning object '" + obj.name + "' that was never spawned from pool.");
             poolDictionary.Add(obj.name, new Queue<GameObject>());
+        }
         poolDictionary[obj.name].Enqueue(obj);
     }
 }
