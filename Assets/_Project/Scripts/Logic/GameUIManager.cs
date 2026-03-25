@@ -7,6 +7,8 @@ public class GameUIManager : MonoBehaviour
 
     public string SelectedTowerType { get; private set; }
 
+    private static readonly string[] towerTypes = { "Archer", "Mage", "Cannon" };
+
     private Button[] towerButtons;
     private Color normalColor = new Color(0.35f, 0.35f, 0.35f);
     private Color selectedColor = new Color(0.2f, 0.6f, 0.2f);
@@ -47,7 +49,6 @@ public class GameUIManager : MonoBehaviour
         layout.childForceExpandHeight = false;
         layout.padding = new RectOffset(10, 10, 5, 5);
 
-        string[] towerTypes = { "Archer", "Mage", "Cannon" };
         towerButtons = new Button[towerTypes.Length];
 
         for (int i = 0; i < towerTypes.Length; i++)
@@ -112,7 +113,6 @@ public class GameUIManager : MonoBehaviour
 
     void UpdateButtonVisuals()
     {
-        string[] towerTypes = { "Archer", "Mage", "Cannon" };
         for (int i = 0; i < towerButtons.Length; i++)
         {
             var img = towerButtons[i].GetComponent<Image>();

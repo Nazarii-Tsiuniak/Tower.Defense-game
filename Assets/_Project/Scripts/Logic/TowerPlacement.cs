@@ -15,8 +15,11 @@ public class TowerPlacement : MonoBehaviour
         if (GameUIManager.Instance == null) return;
         if (string.IsNullOrEmpty(GameUIManager.Instance.SelectedTowerType)) return;
 
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
         Vector2 screenPos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
+        Vector3 worldPos = cam.ScreenToWorldPoint(screenPos);
         worldPos.z = 0f;
 
         worldPos.x = Mathf.Round(worldPos.x);
