@@ -164,13 +164,22 @@ public class GameUIManager : MonoBehaviour
             new Vector2(250, 35), Vector2.zero, 16, new Color(0.7f, 0.9f, 0.7f));
     }
 
-    // Tower-specific colors
+    // Tower-specific colors (bright for visibility)
     static readonly Color[] TowerColors = new Color[]
     {
-        new Color(0.20f, 0.50f, 0.18f), // Archer — green
-        new Color(0.42f, 0.18f, 0.60f), // Mage — purple
-        new Color(0.22f, 0.50f, 0.70f), // Freezer — blue
-        new Color(0.62f, 0.38f, 0.12f), // Cannon — orange
+        new Color(0.30f, 0.65f, 0.25f), // Archer — bright green
+        new Color(0.55f, 0.25f, 0.80f), // Mage — bright purple
+        new Color(0.30f, 0.60f, 0.85f), // Freezer — bright blue
+        new Color(0.80f, 0.50f, 0.15f), // Cannon — bright orange
+    };
+
+    // Selection highlight colors (very bright)
+    static readonly Color[] TowerSelectedColors = new Color[]
+    {
+        new Color(0.50f, 1.0f, 0.40f),  // Archer selected
+        new Color(0.80f, 0.45f, 1.0f),  // Mage selected
+        new Color(0.50f, 0.85f, 1.0f),  // Freezer selected
+        new Color(1.0f, 0.75f, 0.30f),  // Cannon selected
     };
 
     // ========== TOWER PANEL ==========
@@ -183,17 +192,33 @@ public class GameUIManager : MonoBehaviour
         panelRect.anchorMax = new Vector2(1, 0);
         panelRect.pivot = new Vector2(0.5f, 0);
         panelRect.anchoredPosition = new Vector2(0, 0);
-        panelRect.sizeDelta = new Vector2(0, 80);
+        panelRect.sizeDelta = new Vector2(0, 95);
 
         var panelImg = towerPanelGO.AddComponent<Image>();
-        panelImg.color = new Color(0.05f, 0.05f, 0.08f, 0.85f);
+        panelImg.color = new Color(0.08f, 0.08f, 0.12f, 0.92f);
 
         var layout = towerPanelGO.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 10;
+        layout.spacing = 12;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childForceExpandWidth = false;
         layout.childForceExpandHeight = false;
         layout.padding = new RectOffset(15, 15, 5, 5);
+
+        // "ВЕЖІ:" title label (as first child in the layout)
+        var titleGO = new GameObject("TowerTitle");
+        titleGO.transform.SetParent(towerPanelGO.transform, false);
+        var titleRect = titleGO.AddComponent<RectTransform>();
+        titleRect.sizeDelta = new Vector2(70, 80);
+        var titleLE = titleGO.AddComponent<LayoutElement>();
+        titleLE.preferredWidth = 70;
+        titleLE.preferredHeight = 80;
+        var titleText = titleGO.AddComponent<Text>();
+        titleText.text = "ВЕЖІ:";
+        titleText.font = uiFont;
+        titleText.fontSize = 16;
+        titleText.color = new Color(0.9f, 0.9f, 0.6f);
+        titleText.alignment = TextAnchor.MiddleCenter;
+        titleText.horizontalOverflow = HorizontalWrapMode.Overflow;
 
         towerButtons = new Button[TowerInfos.Length];
         towerButtonImages = new Image[TowerInfos.Length];
@@ -206,37 +231,48 @@ public class GameUIManager : MonoBehaviour
             var btnGO = new GameObject(info.key + "_Btn");
             btnGO.transform.SetParent(towerPanelGO.transform, false);
             var btnRect = btnGO.AddComponent<RectTransform>();
-            btnRect.sizeDelta = new Vector2(200, 68);
+            btnRect.sizeDelta = new Vector2(210, 80);
+
+            // Layout element to control size
+            var le = btnGO.AddComponent<LayoutElement>();
+            le.preferredWidth = 210;
+            le.preferredHeight = 80;
 
             var btnImg = btnGO.AddComponent<Image>();
             btnImg.color = TowerColors[i];
             towerButtonImages[i] = btnImg;
 
+            // Add Outline component for selected state visibility
+            var outline = btnGO.AddComponent<Outline>();
+            outline.effectColor = Color.clear;
+            outline.effectDistance = new Vector2(3, 3);
+
             var btn = btnGO.AddComponent<Button>();
             var colors = btn.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f);
-            colors.pressedColor = new Color(0.7f, 0.7f, 0.7f);
-            colors.selectedColor = new Color(1.2f, 1.2f, 1.0f);
+            colors.highlightedColor = new Color(1.2f, 1.2f, 1.2f);
+            colors.pressedColor = new Color(0.8f, 0.8f, 0.8f);
+            colors.selectedColor = new Color(1.1f, 1.1f, 1.0f);
             btn.colors = colors;
             btn.onClick.AddListener(() => SelectTower(TowerInfos[idx].key));
             towerButtons[i] = btn;
 
-            // Tower name (bold/large)
-            CreateText(btnGO.transform, "Name", info.displayName,
-                new Vector2(0, 0.50f), new Vector2(1, 1), new Vector2(0.5f, 0.5f),
-                Vector2.zero, Vector2.zero, 17, Color.white);
+            // Tower name (top half — larger font)
+            var nameText = CreateText(btnGO.transform, "Name", info.displayName,
+                new Vector2(0, 0.45f), new Vector2(1, 1), new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero, 19, Color.white);
+            nameText.fontStyle = FontStyle.Bold;
 
-            // Cost line
-            CreateText(btnGO.transform, "Cost", info.cost + " зол.",
-                new Vector2(0, 0), new Vector2(1, 0.50f), new Vector2(0.5f, 0.5f),
-                Vector2.zero, Vector2.zero, 13, new Color(1f, 0.85f, 0.2f));
+            // Cost + description (bottom half)
+            CreateText(btnGO.transform, "Cost", info.cost + " зол. | " + info.description,
+                new Vector2(0, 0), new Vector2(1, 0.45f), new Vector2(0.5f, 0.5f),
+                Vector2.zero, Vector2.zero, 11, new Color(1f, 0.90f, 0.45f));
         }
 
-        // Selection indicator text (under the panel)
+        // Selection indicator text (above the panel)
         selectionText = CreateText(parent, "SelectionHint", "Виберіть вежу для розміщення",
             new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0.5f, 0),
-            new Vector2(400, 25), new Vector2(0, 82), 13, new Color(0.7f, 0.9f, 0.7f, 0.8f));
+            new Vector2(500, 28), new Vector2(0, 97), 15, new Color(0.7f, 1.0f, 0.7f, 0.9f));
     }
 
     // ========== START WAVE BUTTON ==========
@@ -248,11 +284,11 @@ public class GameUIManager : MonoBehaviour
         btnRect.anchorMin = new Vector2(1, 0);
         btnRect.anchorMax = new Vector2(1, 0);
         btnRect.pivot = new Vector2(1, 0);
-        btnRect.anchoredPosition = new Vector2(-10, 75);
-        btnRect.sizeDelta = new Vector2(200, 50);
+        btnRect.anchoredPosition = new Vector2(-10, 100);
+        btnRect.sizeDelta = new Vector2(220, 55);
 
         var btnImg = btnGO.AddComponent<Image>();
-        btnImg.color = new Color(0.2f, 0.6f, 0.2f);
+        btnImg.color = new Color(0.15f, 0.55f, 0.15f);
 
         startWaveBtn = btnGO.AddComponent<Button>();
         startWaveBtn.onClick.AddListener(OnStartWaveClicked);
@@ -267,7 +303,7 @@ public class GameUIManager : MonoBehaviour
     {
         waveInfoText = CreateText(parent, "WaveInfo", "",
             new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0),
-            new Vector2(300, 30), new Vector2(160, 80), 14, new Color(1f, 0.9f, 0.6f));
+            new Vector2(300, 30), new Vector2(160, 100), 14, new Color(1f, 0.9f, 0.6f));
         waveInfoText.alignment = TextAnchor.MiddleLeft;
         waveInfoText.gameObject.SetActive(false);
     }
@@ -508,12 +544,27 @@ public class GameUIManager : MonoBehaviour
             bool affordable = canBuy && gold >= TowerInfos[i].cost;
             bool selected = TowerInfos[i].key == SelectedTowerType;
 
+            // Update button outline for selection
+            var outline = towerButtons[i].GetComponent<Outline>();
+
             if (selected)
-                towerButtonImages[i].color = Color.Lerp(TowerColors[i], Color.white, 0.4f);
+            {
+                towerButtonImages[i].color = TowerSelectedColors[i];
+                if (outline != null)
+                    outline.effectColor = Color.white;
+            }
             else if (affordable)
+            {
                 towerButtonImages[i].color = TowerColors[i];
+                if (outline != null)
+                    outline.effectColor = Color.clear;
+            }
             else
+            {
                 towerButtonImages[i].color = disabledBtnColor;
+                if (outline != null)
+                    outline.effectColor = Color.clear;
+            }
 
             towerButtons[i].interactable = canBuy;
         }
@@ -527,16 +578,16 @@ public class GameUIManager : MonoBehaviour
             }
             else if (string.IsNullOrEmpty(SelectedTowerType))
             {
-                selectionText.text = "Виберіть вежу для розміщення";
-                selectionText.color = new Color(0.7f, 0.9f, 0.7f, 0.8f);
+                selectionText.text = "<<< Виберіть вежу для розміщення >>>";
+                selectionText.color = new Color(0.7f, 1.0f, 0.7f, 0.9f);
             }
             else
             {
                 string displayName = SelectedTowerType;
                 foreach (var info in TowerInfos)
                     if (info.key == SelectedTowerType) { displayName = info.displayName; break; }
-                selectionText.text = "Вибрано: " + displayName + " — клікніть на поле для розміщення";
-                selectionText.color = new Color(1f, 1f, 0.6f, 0.9f);
+                selectionText.text = ">>> Вибрано: " + displayName + " — клікніть на зелене поле <<<";
+                selectionText.color = new Color(1f, 1f, 0.3f, 1.0f);
             }
         }
     }
