@@ -10,6 +10,7 @@ public class SceneBuilder : MonoBehaviour
         EnsureEventSystem();
         EnsureObjectPooler();
         CreateManagers();
+        CreateMapBorder();
         CreateGrid();
         CreateDecorations();
         CreateWaypointPath();
@@ -21,9 +22,9 @@ public class SceneBuilder : MonoBehaviour
         Camera cam = Camera.main;
         if (cam != null)
         {
-            cam.orthographicSize = 5.5f;
+            cam.orthographicSize = 6.0f;
             cam.transform.position = new Vector3(0, 0.5f, -10f);
-            cam.backgroundColor = new Color(0.18f, 0.22f, 0.18f);
+            cam.backgroundColor = new Color(0.10f, 0.14f, 0.10f);
         }
     }
 
@@ -52,6 +53,31 @@ public class SceneBuilder : MonoBehaviour
 
         var wsGO = new GameObject("WaveSpawner");
         wsGO.AddComponent<WaveSpawner>();
+    }
+
+    void CreateMapBorder()
+    {
+        Sprite borderSprite = SpriteGenerator.CreateMapBorder();
+        var borderParent = new GameObject("MapBorder");
+
+        // Place border tiles around the map
+        for (int col = -1; col <= GridManager.Cols; col++)
+        {
+            for (int row = -1; row <= GridManager.Rows; row++)
+            {
+                // Only border cells (not inside the grid)
+                if (col >= 0 && col < GridManager.Cols && row >= 0 && row < GridManager.Rows)
+                    continue;
+
+                Vector3 pos = GridManager.CellToWorld(col, row);
+                var tile = new GameObject("Border_" + col + "_" + row);
+                tile.transform.SetParent(borderParent.transform);
+                tile.transform.position = pos;
+                var sr = tile.AddComponent<SpriteRenderer>();
+                sr.sprite = borderSprite;
+                sr.sortingOrder = -1;
+            }
+        }
     }
 
     void CreateGrid()
@@ -97,6 +123,7 @@ public class SceneBuilder : MonoBehaviour
         Sprite treeSprite = SpriteGenerator.CreateTreeSprite();
         Sprite bushSprite = SpriteGenerator.CreateBushSprite();
         Sprite flowerSprite = SpriteGenerator.CreateFlowerSprite();
+        Sprite rockSprite = SpriteGenerator.CreateRockSprite();
 
         var decoParent = new GameObject("Decorations");
         var rng = new System.Random(123);
@@ -106,11 +133,11 @@ public class SceneBuilder : MonoBehaviour
             for (int row = 0; row < GridManager.Rows; row++)
             {
                 if (GridManager.Instance.IsPath(col, row)) continue;
-                if (rng.NextDouble() > 0.18) continue;
+                if (rng.NextDouble() > 0.22) continue;
 
                 Vector3 pos = GridManager.CellToWorld(col, row);
-                pos.x += (float)(rng.NextDouble() - 0.5) * 0.3f;
-                pos.y += (float)(rng.NextDouble() - 0.5) * 0.3f;
+                pos.x += (float)(rng.NextDouble() - 0.5) * 0.25f;
+                pos.y += (float)(rng.NextDouble() - 0.5) * 0.25f;
 
                 var decoGO = new GameObject("Deco_" + col + "_" + row);
                 decoGO.transform.SetParent(decoParent.transform);
@@ -120,12 +147,14 @@ public class SceneBuilder : MonoBehaviour
                 sr.sortingOrder = 1;
 
                 float roll = (float)rng.NextDouble();
-                if (roll < 0.35f)
+                if (roll < 0.25f)
                     sr.sprite = treeSprite;
-                else if (roll < 0.65f)
+                else if (roll < 0.45f)
                     sr.sprite = bushSprite;
-                else
+                else if (roll < 0.70f)
                     sr.sprite = flowerSprite;
+                else
+                    sr.sprite = rockSprite;
             }
         }
     }

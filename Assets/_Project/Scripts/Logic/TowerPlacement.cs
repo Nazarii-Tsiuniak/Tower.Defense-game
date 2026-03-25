@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class TowerPlacement : MonoBehaviour
 {
@@ -45,7 +46,8 @@ public class TowerPlacement : MonoBehaviour
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            // Robust UI-over check compatible with new Input System
+            if (IsPointerOverUI(screenPos))
                 return;
 
             if (canPlace && canAfford)
@@ -53,6 +55,16 @@ public class TowerPlacement : MonoBehaviour
                 PlaceTower(snappedPos, cell, selectedType, cost);
             }
         }
+    }
+
+    // Manual UI raycast — works reliably with InputSystemUIInputModule
+    static bool IsPointerOverUI(Vector2 screenPos)
+    {
+        if (EventSystem.current == null) return false;
+        var eventData = new PointerEventData(EventSystem.current) { position = screenPos };
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        return results.Count > 0;
     }
 
     void ShowPreview(Vector3 pos, string towerType, bool valid)
