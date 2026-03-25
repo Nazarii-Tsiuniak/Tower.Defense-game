@@ -7,5 +7,7 @@ public class EnemyData : ScriptableObject
     public int health;
     public float speed;
     public int cost;
+    public int rewardGold;
+    public bool immuneToSlow;
     public Sprite visual;
 }

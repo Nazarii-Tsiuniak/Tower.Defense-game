@@ -17,23 +17,31 @@ public class ObjectPooler : MonoBehaviour
         if (!poolDictionary.ContainsKey(key))
             poolDictionary.Add(key, new Queue<GameObject>());
 
+        GameObject obj;
         if (poolDictionary[key].Count == 0)
         {
-            GameObject obj = Instantiate(prefab, position, rotation);
+            obj = Instantiate(prefab, position, rotation);
             obj.name = key;
-            return obj;
+        }
+        else
+        {
+            obj = poolDictionary[key].Dequeue();
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
         }
 
-        GameObject objectToSpawn = poolDictionary[key].Dequeue();
-        objectToSpawn.SetActive(true);
-        objectToSpawn.transform.position = position;
-        objectToSpawn.transform.rotation = rotation;
-        return objectToSpawn;
+        obj.SetActive(true);
+        return obj;
     }
 
     public void ReturnToPool(GameObject obj)
     {
         obj.SetActive(false);
+        if (!poolDictionary.ContainsKey(obj.name))
+        {
+            Debug.LogWarning("ObjectPooler: returning object '" + obj.name + "' that was never spawned from pool.");
+            poolDictionary.Add(obj.name, new Queue<GameObject>());
+        }
         poolDictionary[obj.name].Enqueue(obj);
     }
 }
