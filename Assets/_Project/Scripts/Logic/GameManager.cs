@@ -22,8 +22,8 @@ public class GameManager : MonoBehaviour
     public const int MaxRounds = 10;
     public const int StartGold = 300;
     public const int StartBaseHP = 20;
-    public const int StartAttackBudget = 200;
-    public const int BudgetIncreasePerRound = 30;
+    public const int StartAttackBudget = 80;
+    public const int BudgetIncreasePerRound = 40;
 
     public event Action<GameState> OnStateChanged;
     public event Action OnStatsChanged;
