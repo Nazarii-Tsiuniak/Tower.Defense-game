@@ -182,11 +182,11 @@ public class SceneBuilder : MonoBehaviour
         Sprite hpFillSprite = SpriteGenerator.CreateHealthBarFill();
 
         WaveSpawner.Instance.EnemyTemplates["Goblin"] = CreateEnemyTemplate(
-            "Goblin", 50, 3.0f, 10, 5, false, hpBgSprite, hpFillSprite);
+            "Goblin", 50, 1.5f, 10, 5, false, hpBgSprite, hpFillSprite);
         WaveSpawner.Instance.EnemyTemplates["Orc"] = CreateEnemyTemplate(
             "Orc", 200, 1.2f, 25, 15, false, hpBgSprite, hpFillSprite);
         WaveSpawner.Instance.EnemyTemplates["Ghost"] = CreateEnemyTemplate(
-            "Ghost", 100, 2.0f, 20, 10, true, hpBgSprite, hpFillSprite);
+            "Ghost", 100, 1.0f, 20, 10, true, hpBgSprite, hpFillSprite);
     }
 
     GameObject CreateEnemyTemplate(string enemyName, int hp, float speed, int cost,
