@@ -38,7 +38,8 @@ public class WaveSpawner : MonoBehaviour
         {
             var entry = spawnQueue.Dequeue();
             SpawnEnemy(entry.enemyType);
-            float interval = Random.Range(0.8f, 1.2f);
+            // Spawn interval increases with wave complexity - more enemies = longer interval
+            float interval = Mathf.Lerp(0.5f, 1.5f, spawnQueue.Count / 50f);
             yield return new WaitForSeconds(interval);
         }
     }
