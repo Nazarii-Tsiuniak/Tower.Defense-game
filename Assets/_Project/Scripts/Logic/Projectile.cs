@@ -50,7 +50,29 @@ public class Projectile : MonoBehaviour
         {
             case AttackType.Single:
                 if (target != null && target.gameObject.activeInHierarchy)
+                {
                     target.TakeDamage(damage);
+                }
+                else if (target == null || !target.gameObject.activeInHierarchy)
+                {
+                    // Fallback: deal damage at target position to closest active enemy
+                    float closestDist = float.MaxValue;
+                    EnemyMovement closestEnemy = null;
+                    
+                    foreach (var enemy in EnemyMovement.ActiveEnemies)
+                    {
+                        if (enemy == null || !enemy.gameObject.activeInHierarchy) continue;
+                        float dist = Vector3.Distance(transform.position, enemy.transform.position);
+                        if (dist < closestDist)
+                        {
+                            closestDist = dist;
+                            closestEnemy = enemy;
+                        }
+                    }
+                    
+                    if (closestEnemy != null && closestDist <= 0.5f)
+                        closestEnemy.TakeDamage(damage);
+                }
                 break;
 
             case AttackType.AoE:
