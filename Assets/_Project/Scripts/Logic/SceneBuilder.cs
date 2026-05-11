@@ -82,7 +82,7 @@ public class SceneBuilder : MonoBehaviour
 
     void CreateGrid()
     {
-        Sprite grassSprite = SpriteGenerator.CreateGrassTile();
+        Sprite[] grassVariants = SpriteGenerator.CreateGrassTileVariants();
         Sprite pathSprite = SpriteGenerator.CreatePathTile();
         Sprite entrySprite = SpriteGenerator.CreateEntryMarker();
         Sprite baseSprite = SpriteGenerator.CreateBaseMarker();
@@ -111,7 +111,7 @@ public class SceneBuilder : MonoBehaviour
                 else if (isPath)
                     sr.sprite = pathSprite;
                 else
-                    sr.sprite = grassSprite;
+                    sr.sprite = grassVariants[(col * 7 + row * 13) % grassVariants.Length];
             }
         }
     }

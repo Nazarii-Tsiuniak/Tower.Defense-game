@@ -45,6 +45,37 @@ public static class SpriteGenerator
         return Color.Lerp(b, c, (t - 0.5f) * 2f);
     }
 
+    // ==================== TEXTURE DRAWING HELPERS ====================
+    static void FillRect(Texture2D tex, int x1, int y1, int x2, int y2, Color c)
+    {
+        for (int y = y1; y <= y2; y++)
+            for (int x = x1; x <= x2; x++)
+                if (x >= 0 && x < tex.width && y >= 0 && y < tex.height)
+                    tex.SetPixel(x, y, c);
+    }
+
+    static void FillCircle(Texture2D tex, float cx, float cy, float r, Color c)
+    {
+        int x0 = Mathf.Max(0, Mathf.FloorToInt(cx - r));
+        int x1 = Mathf.Min(tex.width  - 1, Mathf.CeilToInt(cx + r));
+        int y0 = Mathf.Max(0, Mathf.FloorToInt(cy - r));
+        int y1 = Mathf.Min(tex.height - 1, Mathf.CeilToInt(cy + r));
+        for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
+            {
+                float dx = x + 0.5f - cx;
+                float dy = y + 0.5f - cy;
+                if (dx * dx + dy * dy < r * r)
+                    tex.SetPixel(x, y, c);
+            }
+    }
+
+    static void SetPx(Texture2D tex, int x, int y, Color c)
+    {
+        if (x >= 0 && x < tex.width && y >= 0 && y < tex.height)
+            tex.SetPixel(x, y, c);
+    }
+
     // ==================== GRASS TILE ====================
     public static Sprite CreateGrassTile()
     {
@@ -108,6 +139,63 @@ public static class SpriteGenerator
                 // Subtle edge shadow
                 if (edgeDist <= 2)
                     baseCol = Color.Lerp(baseCol, border, 0.3f);
+
+                tex.SetPixel(x, y, baseCol);
+            }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
+    }
+
+    /// <summary>
+    /// Returns 4 grass tile variants with different random seeds and slight colour shifts.
+    /// Use one variant per grid cell to break up the "one image" look.
+    /// </summary>
+    public static Sprite[] CreateGrassTileVariants()
+    {
+        int[]   seeds        = { 42,     77,     123,    200    };
+        float[] greenShifts  = { 0f,    -0.04f,  0.05f, -0.02f };
+        float[] brightShifts = { 0f,     0.03f, -0.03f,  0.02f };
+        var variants = new Sprite[seeds.Length];
+        for (int i = 0; i < seeds.Length; i++)
+            variants[i] = GenerateGrassTileVariant(seeds[i], greenShifts[i], brightShifts[i]);
+        return variants;
+    }
+
+    static Sprite GenerateGrassTileVariant(int seed, float greenShift, float brightShift)
+    {
+        int s = 32;
+        var tex = new Texture2D(s, s);
+        tex.filterMode = FilterMode.Point;
+
+        Color dark   = new Color(0.22f, 0.50f + greenShift, 0.14f);
+        Color mid    = new Color(0.30f, 0.62f + greenShift, 0.20f);
+        Color light  = new Color(0.38f, 0.72f + greenShift, 0.26f);
+        Color bright = new Color(0.48f + brightShift, 0.80f + greenShift, 0.30f);
+        Color border = new Color(0.20f, 0.45f, 0.12f);
+        var rng = new System.Random(seed);
+
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+            {
+                float edgeDist = Mathf.Min(x, y, s - 1 - x, s - 1 - y);
+                if (edgeDist == 0) { tex.SetPixel(x, y, border); continue; }
+
+                float cx     = (x - s / 2f) / (s / 2f);
+                float cy     = (y - s / 2f) / (s / 2f);
+                float radial = 1f - (cx * cx + cy * cy) * 0.3f;
+                float noise  = (float)rng.NextDouble();
+
+                Color baseCol = noise < 0.05f ? bright :
+                                noise < 0.25f ? light  :
+                                noise < 0.75f ? mid    : dark;
+                baseCol *= radial;
+                baseCol.a = 1f;
+
+                if (x % 4 == 1 && y > 2 && y < s - 2 && rng.NextDouble() < 0.4f)
+                    baseCol = Color.Lerp(baseCol, bright, 0.4f);
+                if (rng.NextDouble() < 0.008f) baseCol = new Color(0.9f, 0.8f, 0.2f);
+                if (rng.NextDouble() < 0.005f) baseCol = new Color(0.85f, 0.3f, 0.3f);
+                if (edgeDist <= 2) baseCol = Color.Lerp(baseCol, border, 0.3f);
 
                 tex.SetPixel(x, y, baseCol);
             }
@@ -536,7 +624,7 @@ public static class SpriteGenerator
         var loaded = SpriteLoader.EnemySprite(enemyName);
         if (loaded != null) return loaded;
 
-        int s = 24;
+        int s = 32;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;
 
@@ -567,101 +655,198 @@ public static class SpriteGenerator
 
     static void DrawGoblin(Texture2D tex, int s)
     {
-        Color body   = new Color(0.40f, 0.80f, 0.30f);
-        Color bodyDk = new Color(0.28f, 0.60f, 0.20f);
-        Color ear    = new Color(0.35f, 0.70f, 0.25f);
+        // 32×32 goblin: legs → loincloth → body → arms → head → ears → face
+        Color skin    = new Color(0.35f, 0.73f, 0.24f);
+        Color skinDk  = new Color(0.23f, 0.52f, 0.15f);
+        Color cloth   = new Color(0.50f, 0.32f, 0.12f);
+        Color clothDk = new Color(0.35f, 0.22f, 0.08f);
+        Color white   = Color.white;
+        Color pupil   = new Color(0.08f, 0.08f, 0.12f);
+        Color tooth   = new Color(0.95f, 0.92f, 0.80f);
 
-        // Body — smaller, faster looking
-        float cx = s / 2f, cy = s / 2f - 1;
-        for (int y = 0; y < s; y++)
-            for (int x = 0; x < s; x++)
+        // Legs
+        FillRect(tex, 12, 1, 15, 12, skin);
+        FillRect(tex, 17, 1, 20, 12, skin);
+        FillRect(tex, 12, 1, 15, 4, skinDk);
+        FillRect(tex, 17, 1, 20, 4, skinDk);
+
+        // Loincloth
+        FillRect(tex, 11, 10, 21, 13, cloth);
+        FillRect(tex, 13, 10, 19, 10, clothDk);
+
+        // Torso
+        FillRect(tex, 12, 13, 20, 20, skin);
+        for (int y = 14; y <= 19; y++) SetPx(tex, 20, y, skinDk); // right shadow
+
+        // Arms
+        FillRect(tex, 7, 14, 12, 20, skin);
+        FillRect(tex, 20, 14, 25, 20, skin);
+        FillCircle(tex, 8.5f, 12.5f, 2.5f, skin);
+        FillCircle(tex, 23.5f, 12.5f, 2.5f, skin);
+
+        // Head
+        FillCircle(tex, 16f, 25.5f, 7f, skin);
+        // Subtle right-side shadow on head
+        for (int y = 19; y < 32; y++)
+            for (int x = 18; x < 24; x++)
             {
-                float dx = x - cx;
-                float dy = (y - cy) * 1.2f;
-                float dist = Mathf.Sqrt(dx * dx + dy * dy);
-                if (dist < 7) tex.SetPixel(x, y, body);
-                else if (dist < 8.5f) tex.SetPixel(x, y, bodyDk);
+                var c = tex.GetPixel(x, y);
+                if (c.a > 0.1f) tex.SetPixel(x, y, Color.Lerp(c, skinDk, 0.28f));
             }
+
         // Pointy ears
-        tex.SetPixel(4, 16, ear); tex.SetPixel(3, 17, ear); tex.SetPixel(2, 18, ear);
-        tex.SetPixel(19, 16, ear); tex.SetPixel(20, 17, ear); tex.SetPixel(21, 18, ear);
-        // Eyes — big and mischievous
-        tex.SetPixel(9, 14, Color.white); tex.SetPixel(10, 14, Color.white);
-        tex.SetPixel(14, 14, Color.white); tex.SetPixel(15, 14, Color.white);
-        tex.SetPixel(10, 14, Color.black); tex.SetPixel(15, 14, Color.black);
-        // Grin
-        tex.SetPixel(10, 10, bodyDk); tex.SetPixel(11, 9, bodyDk);
-        tex.SetPixel(12, 9, bodyDk); tex.SetPixel(13, 9, bodyDk); tex.SetPixel(14, 10, bodyDk);
+        FillRect(tex, 8, 24, 10, 27, skin);
+        SetPx(tex, 7, 26, skin); SetPx(tex, 7, 27, skinDk);
+        FillRect(tex, 22, 24, 24, 27, skin);
+        SetPx(tex, 25, 26, skin); SetPx(tex, 25, 27, skinDk);
+
+        // Eyes (white sclera + dark pupil)
+        FillRect(tex, 12, 24, 14, 26, white);
+        SetPx(tex, 13, 25, pupil);
+        FillRect(tex, 18, 24, 20, 26, white);
+        SetPx(tex, 19, 25, pupil);
+
+        // Brow
+        SetPx(tex, 12, 27, skinDk); SetPx(tex, 13, 27, skinDk);
+        SetPx(tex, 19, 27, skinDk); SetPx(tex, 20, 27, skinDk);
+
+        // Grin with small teeth
+        SetPx(tex, 13, 22, skinDk);
+        SetPx(tex, 14, 21, tooth); SetPx(tex, 15, 21, tooth);
+        SetPx(tex, 16, 22, skinDk);
+        SetPx(tex, 17, 21, tooth); SetPx(tex, 18, 21, tooth);
+        SetPx(tex, 19, 22, skinDk);
+
+        // Nose
+        SetPx(tex, 15, 23, skinDk); SetPx(tex, 17, 23, skinDk);
     }
 
     static void DrawOrc(Texture2D tex, int s)
     {
-        Color body   = new Color(0.50f, 0.38f, 0.28f);
-        Color bodyDk = new Color(0.38f, 0.28f, 0.20f);
-        Color armor  = new Color(0.45f, 0.45f, 0.48f);
+        // 32×32 orc: heavy, armoured, tusked
+        Color skin    = new Color(0.55f, 0.40f, 0.26f);
+        Color skinDk  = new Color(0.38f, 0.27f, 0.16f);
+        Color armor   = new Color(0.44f, 0.46f, 0.50f);
+        Color armorDk = new Color(0.28f, 0.30f, 0.33f);
+        Color armorLt = new Color(0.62f, 0.65f, 0.70f);
+        Color brown   = new Color(0.42f, 0.26f, 0.10f);
+        Color white   = Color.white;
+        Color redEye  = new Color(0.85f, 0.15f, 0.10f);
+        Color tusk    = new Color(0.92f, 0.88f, 0.72f);
 
-        // Larger body
-        float cx = s / 2f, cy = s / 2f;
-        for (int y = 0; y < s; y++)
-            for (int x = 0; x < s; x++)
+        // Legs
+        FillRect(tex, 11, 1, 15, 11, skin);
+        FillRect(tex, 17, 1, 21, 11, skin);
+        FillRect(tex, 11, 1, 15, 5, brown);
+        FillRect(tex, 17, 1, 21, 5, brown);
+        FillRect(tex, 10, 8, 16, 9, armorDk);
+        FillRect(tex, 16, 8, 22, 9, armorDk);
+
+        // Torso
+        FillRect(tex, 10, 11, 22, 22, skin);
+        // Chest armour plate
+        FillRect(tex, 11, 14, 21, 21, armor);
+        FillRect(tex, 11, 21, 21, 21, armorLt);
+        FillRect(tex, 20, 14, 21, 21, armorDk);
+        SetPx(tex, 16, 14, armorDk); SetPx(tex, 16, 15, armorDk); // centre line
+
+        // Shoulder pads
+        FillRect(tex, 7, 19, 12, 23, armor);
+        FillRect(tex, 20, 19, 25, 23, armor);
+        FillRect(tex, 7, 23, 12, 23, armorLt);
+        FillRect(tex, 20, 23, 25, 23, armorLt);
+
+        // Arms + gauntlets
+        FillRect(tex, 6, 12, 11, 21, skin);
+        FillRect(tex, 21, 12, 26, 21, skin);
+        FillRect(tex, 5, 10, 12, 13, armor);
+        FillRect(tex, 20, 10, 27, 13, armor);
+        FillRect(tex, 5, 13, 12, 13, armorLt);
+        FillRect(tex, 20, 13, 27, 13, armorLt);
+
+        // Head
+        FillCircle(tex, 16f, 25f, 7.5f, skin);
+        for (int y = 18; y < 32; y++)
+            for (int x = 18; x < 24; x++)
             {
-                float dx = x - cx;
-                float dy = (y - cy) * 0.9f;
-                float dist = Mathf.Sqrt(dx * dx + dy * dy);
-                if (dist < 9) tex.SetPixel(x, y, body);
-                else if (dist < 10.5f) tex.SetPixel(x, y, bodyDk);
+                var c = tex.GetPixel(x, y);
+                if (c.a > 0.1f) tex.SetPixel(x, y, Color.Lerp(c, skinDk, 0.35f));
             }
-        // Armor plate
-        for (int y = 6; y < 12; y++)
-            for (int x = 8; x < 16; x++)
-                tex.SetPixel(x, y, armor);
-        // Eyes — angry
-        tex.SetPixel(9, 15, Color.white); tex.SetPixel(10, 15, Color.white);
-        tex.SetPixel(14, 15, Color.white); tex.SetPixel(15, 15, Color.white);
-        tex.SetPixel(10, 15, new Color(0.8f, 0.2f, 0.1f));
-        tex.SetPixel(15, 15, new Color(0.8f, 0.2f, 0.1f));
-        // Angry brow
-        tex.SetPixel(8, 16, bodyDk); tex.SetPixel(9, 17, bodyDk);
-        tex.SetPixel(16, 16, bodyDk); tex.SetPixel(15, 17, bodyDk);
+
+        // Helmet
+        FillCircle(tex, 16f, 29f, 6f, armor);
+        FillRect(tex, 10, 27, 22, 30, armor);
+        FillRect(tex, 13, 25, 19, 26, armorDk);
+        FillRect(tex, 10, 30, 22, 30, armorLt);
+
+        // Eyes (below visor)
+        FillRect(tex, 12, 25, 14, 26, white);
+        SetPx(tex, 13, 26, redEye); SetPx(tex, 13, 25, redEye);
+        FillRect(tex, 18, 25, 20, 26, white);
+        SetPx(tex, 19, 26, redEye); SetPx(tex, 19, 25, redEye);
+
+        // Brow
+        SetPx(tex, 11, 27, skinDk); SetPx(tex, 12, 28, skinDk);
+        SetPx(tex, 19, 28, skinDk); SetPx(tex, 20, 27, skinDk);
+
         // Tusks
-        tex.SetPixel(10, 11, Color.white); tex.SetPixel(14, 11, Color.white);
+        SetPx(tex, 13, 22, tusk); SetPx(tex, 13, 21, tusk); SetPx(tex, 13, 20, tusk);
+        SetPx(tex, 19, 22, tusk); SetPx(tex, 19, 21, tusk); SetPx(tex, 19, 20, tusk);
+
+        // Mouth
+        for (int x = 14; x <= 18; x++) SetPx(tex, x, 22, skinDk);
+        SetPx(tex, 15, 23, skinDk); SetPx(tex, 17, 23, skinDk);
     }
 
     static void DrawGhost(Texture2D tex, int s)
     {
-        Color body   = new Color(0.85f, 0.85f, 0.95f, 0.7f);
-        Color bodyDk = new Color(0.65f, 0.65f, 0.78f, 0.6f);
-        Color glow   = new Color(0.95f, 0.95f, 1.0f, 0.5f);
+        // 32×32 ghost: translucent, rounded top, wavy tail, glowing eyes
+        Color body   = new Color(0.82f, 0.86f, 0.95f, 0.88f);
+        Color bodyDk = new Color(0.56f, 0.60f, 0.76f, 0.72f);
+        Color glow   = new Color(0.90f, 0.93f, 1.0f,  0.40f);
+        Color eye    = new Color(0.20f, 0.40f, 0.90f);
+        Color eyeDk  = new Color(0.08f, 0.18f, 0.65f);
+        Color core   = new Color(0.94f, 0.96f, 1.0f,  0.60f);
 
-        // Ghost shape — rounded top, wavy bottom
-        float cx = s / 2f, cy = s / 2f + 2;
-        for (int y = 0; y < s; y++)
-            for (int x = 0; x < s; x++)
+        // Outer glow halo
+        FillCircle(tex, 16f, 20f, 12f, glow);
+
+        // Main body: rounded head + trailing skirt
+        FillCircle(tex, 16f, 21f, 9.5f, body);
+        FillRect(tex, 8, 8, 24, 21, body);
+
+        // Wavy bottom – carve out the lower pixels
+        for (int x = 7; x <= 25; x++)
+        {
+            float wave = Mathf.Sin(x * 0.65f) * 3f;
+            int cut = Mathf.RoundToInt(9f + wave);
+            for (int y = 0; y < cut; y++) SetPx(tex, x, y, Color.clear);
+        }
+
+        // Right-side shadow
+        for (int y = 9; y < 30; y++)
+            for (int x = 18; x < 26; x++)
             {
-                float dx = x - cx;
-                float dy = (y - cy);
-                if (y > cy) dy *= 0.7f; // Squish bottom
-                float dist = Mathf.Sqrt(dx * dx + dy * dy);
-
-                // Wavy bottom
-                if (y < 6)
-                {
-                    float wave = Mathf.Sin(x * 1.2f) * 2f;
-                    if (y < 4 + wave) continue;
-                }
-
-                if (dist < 8) tex.SetPixel(x, y, body);
-                else if (dist < 9.5f) tex.SetPixel(x, y, bodyDk);
+                var c = tex.GetPixel(x, y);
+                if (c.a > 0.2f) tex.SetPixel(x, y, Color.Lerp(c, bodyDk, 0.5f));
             }
-        // Glowing eyes
-        tex.SetPixel(9, 14, new Color(0.3f, 0.5f, 1.0f));
-        tex.SetPixel(10, 14, new Color(0.3f, 0.5f, 1.0f));
-        tex.SetPixel(14, 14, new Color(0.3f, 0.5f, 1.0f));
-        tex.SetPixel(15, 14, new Color(0.3f, 0.5f, 1.0f));
-        tex.SetPixel(10, 15, new Color(0.5f, 0.7f, 1.0f));
-        tex.SetPixel(15, 15, new Color(0.5f, 0.7f, 1.0f));
-        // Glow effect
-        tex.SetPixel(12, 18, glow); tex.SetPixel(13, 19, glow);
+
+        // Inner bright highlight
+        FillCircle(tex, 14f, 23f, 3.5f, core);
+
+        // Left eye socket
+        FillCircle(tex, 12.5f, 22f, 3f, bodyDk);
+        FillCircle(tex, 12.5f, 22f, 2f, eye);
+        SetPx(tex, 12, 22, eyeDk); SetPx(tex, 13, 21, eyeDk);
+
+        // Right eye socket
+        FillCircle(tex, 19.5f, 22f, 3f, bodyDk);
+        FillCircle(tex, 19.5f, 22f, 2f, eye);
+        SetPx(tex, 19, 22, eyeDk); SetPx(tex, 20, 21, eyeDk);
+
+        // O-shaped mouth
+        FillCircle(tex, 16f, 17f, 2.8f, bodyDk);
+        FillCircle(tex, 16f, 17f, 1.5f, eye);
     }
 
     static void DrawDefaultEnemy(Texture2D tex, int s)
