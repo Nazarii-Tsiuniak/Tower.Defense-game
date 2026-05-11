@@ -119,6 +119,10 @@ public class SceneBuilder : MonoBehaviour
     void CreateDecorations()
     {
         if (GridManager.Instance == null) return;
+        const float PropThreshold = 0.22f;   // 22%
+        const float TreeThreshold = 0.42f;   // +20%
+        const float BushThreshold = 0.62f;   // +20%
+        const float FlowerThreshold = 0.82f; // +20%
 
         Sprite treeSprite = SpriteGenerator.CreateTreeSprite();
         Sprite bushSprite = SpriteGenerator.CreateBushSprite();
@@ -148,15 +152,15 @@ public class SceneBuilder : MonoBehaviour
                 sr.sortingOrder = 1;
 
                 float roll = (float)rng.NextDouble();
-                if (propSprites.Length > 0 && roll < 0.22f)
+                if (propSprites.Length > 0 && roll < PropThreshold)
                 {
                     sr.sprite = propSprites[rng.Next(propSprites.Length)];
                 }
-                else if (roll < 0.42f)
+                else if (roll < TreeThreshold)
                     sr.sprite = treeSprite;
-                else if (roll < 0.62f)
+                else if (roll < BushThreshold)
                     sr.sprite = bushSprite;
-                else if (roll < 0.82f)
+                else if (roll < FlowerThreshold)
                     sr.sprite = flowerSprite;
                 else
                     sr.sprite = rockSprite;

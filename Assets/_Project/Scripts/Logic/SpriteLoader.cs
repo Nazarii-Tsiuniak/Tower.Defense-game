@@ -199,10 +199,10 @@ public static class SpriteLoader
     {
         switch (towerName)
         {
-            case "Archer":  return LoadCharacterFirst(3, 2, 0); // Archer/Knight fallback
-            case "Mage":    return LoadCharacterFirst(4, 2, 3); // Mage may be absent in some sheets
-            case "Freezer": return LoadCharacterFirst(1, 4, 2); // Slime/mage-like caster fallback
-            case "Cannon":  return LoadCharacterFirst(2, 3, 0); // Knight/Archer fallback
+            case "Archer":  return LoadCharacterFirst(3, 2, 0); // 3=Archer, 2=Knight, 0=Goblin fallback
+            case "Mage":    return LoadCharacterFirst(4, 2, 3); // 4=Mage, 2=Knight, 3=Archer fallback
+            case "Freezer": return LoadCharacterFirst(1, 4, 2); // 1=Slime, 4=Mage, 2=Knight fallback
+            case "Cannon":  return LoadCharacterFirst(2, 3, 0); // 2=Knight, 3=Archer, 0=Goblin fallback
             default:        return LoadCharacterFirst(2, 0);
         }
     }
