@@ -28,10 +28,16 @@ public static class SpriteLoader
     static Texture2D _towerTex;
     static Texture2D _tileTex;
     static Texture2D _propsTex;
+    static string _charTexName;
+    static string _towerTexName;
+    static string _tileTexName;
 
-    static Texture2D LoadTex(ref Texture2D cache, string fileName)
+    static Texture2D LoadTex(ref Texture2D cache, ref string cachedFileName, string fileName)
     {
-        if (cache != null) return cache;
+        if (cache != null && cachedFileName == fileName) return cache;
+
+        cache = null;
+        cachedFileName = fileName;
 
         cache = Resources.Load<Texture2D>($"Sprites/{fileName}");
         if (cache == null)
@@ -67,7 +73,7 @@ public static class SpriteLoader
     /// <summary>Load one of the 5 characters (0=Goblin 1=Slime 2=Knight 3=Archer 4=Mage)</summary>
     public static Sprite LoadCharacter(int index)
     {
-        var tex = LoadTex(ref _charTex, "characters");
+        var tex = LoadTex(ref _charTex, ref _charTexName, "characters");
         return Cut(tex, index, 0, CHAR_W, CHAR_H);
     }
 
@@ -78,13 +84,13 @@ public static class SpriteLoader
     /// </summary>
     public static Sprite LoadTower(int typeRow, int levelCol = 0)
     {
-        var tex = LoadTex(ref _towerTex, "towers");
+        var tex = LoadTex(ref _towerTex, ref _towerTexName, "towers");
         return Cut(tex, levelCol, typeRow, TOWER_W, TOWER_H);
     }
 
     public static Sprite LoadTile(int col, int row)
     {
-        var tex = LoadTex(ref _tileTex, "tileset1");
+        var tex = LoadTex(ref _tileTex, ref _tileTexName, "tileset1");
         return Cut(tex, col, row, TILE_W, TILE_H);
     }
 
@@ -132,5 +138,8 @@ public static class SpriteLoader
         _towerTex = null;
         _tileTex  = null;
         _propsTex = null;
+        _charTexName = null;
+        _towerTexName = null;
+        _tileTexName = null;
     }
 }
