@@ -48,6 +48,9 @@ public static class SpriteGenerator
     // ==================== GRASS TILE ====================
     public static Sprite CreateGrassTile()
     {
+        var loaded = SpriteLoader.LoadGrassTile();
+        if (loaded != null) return loaded;
+
         int s = 32;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;
@@ -115,6 +118,9 @@ public static class SpriteGenerator
     // ==================== PATH TILE (COBBLESTONE) ====================
     public static Sprite CreatePathTile()
     {
+        var loaded = SpriteLoader.LoadPathTile();
+        if (loaded != null) return loaded;
+
         int s = 32;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;
@@ -312,6 +318,9 @@ public static class SpriteGenerator
     // ==================== TOWER SPRITES ====================
     public static Sprite CreateTowerSprite(string towerName)
     {
+        var loaded = SpriteLoader.TowerSprite(towerName);
+        if (loaded != null) return loaded;
+
         int s = 32;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;
@@ -524,6 +533,9 @@ public static class SpriteGenerator
     // ==================== ENEMY SPRITES ====================
     public static Sprite CreateEnemySprite(string enemyName)
     {
+        var loaded = SpriteLoader.EnemySprite(enemyName);
+        if (loaded != null) return loaded;
+
         int s = 24;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;
@@ -941,6 +953,9 @@ public static class SpriteGenerator
 
     public static Sprite CreateMapBorder()
     {
+        var loaded = SpriteLoader.LoadTile(2, 0) ?? SpriteLoader.LoadTile(0, 1);
+        if (loaded != null) return loaded;
+
         int s = 32;
         var tex = new Texture2D(s, s);
         tex.filterMode = FilterMode.Point;

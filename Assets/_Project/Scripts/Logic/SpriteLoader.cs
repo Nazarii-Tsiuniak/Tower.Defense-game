@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// Loads sprites from the downloaded PNG spritesheets.
@@ -26,10 +29,23 @@ public static class SpriteLoader
     static Texture2D _tileTex;
     static Texture2D _propsTex;
 
-    static Texture2D LoadTex(ref Texture2D cache, string path)
+    static Texture2D LoadTex(ref Texture2D cache, string fileName)
     {
+        if (cache != null) return cache;
+
+        cache = Resources.Load<Texture2D>($"Sprites/{fileName}");
         if (cache == null)
-            cache = Resources.Load<Texture2D>(path);
+            cache = Resources.Load<Texture2D>(fileName);
+
+#if UNITY_EDITOR
+        if (cache == null)
+        {
+            cache = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Resources/Sprites/{fileName}.png");
+            if (cache == null)
+                cache = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{fileName}.png");
+        }
+#endif
+
         return cache;
     }
 
@@ -51,7 +67,7 @@ public static class SpriteLoader
     /// <summary>Load one of the 5 characters (0=Goblin 1=Slime 2=Knight 3=Archer 4=Mage)</summary>
     public static Sprite LoadCharacter(int index)
     {
-        var tex = LoadTex(ref _charTex, "Sprites/characters");
+        var tex = LoadTex(ref _charTex, "characters");
         return Cut(tex, index, 0, CHAR_W, CHAR_H);
     }
 
@@ -62,22 +78,26 @@ public static class SpriteLoader
     /// </summary>
     public static Sprite LoadTower(int typeRow, int levelCol = 0)
     {
-        var tex = LoadTex(ref _towerTex, "Sprites/towers");
+        var tex = LoadTex(ref _towerTex, "towers");
         return Cut(tex, levelCol, typeRow, TOWER_W, TOWER_H);
+    }
+
+    public static Sprite LoadTile(int col, int row)
+    {
+        var tex = LoadTex(ref _tileTex, "tileset1");
+        return Cut(tex, col, row, TILE_W, TILE_H);
     }
 
     /// <summary>Grass tile from tileset (col 0, row 0)</summary>
     public static Sprite LoadGrassTile()
     {
-        var tex = LoadTex(ref _tileTex, "Sprites/tileset1");
-        return Cut(tex, 0, 0, TILE_W, TILE_H);
+        return LoadTile(0, 0);
     }
 
     /// <summary>Path / cobblestone tile (col 1, row 0)</summary>
     public static Sprite LoadPathTile()
     {
-        var tex = LoadTex(ref _tileTex, "Sprites/tileset1");
-        return Cut(tex, 1, 0, TILE_W, TILE_H);
+        return LoadTile(1, 0);
     }
 
     // ── Named helpers used by SpriteGenerator ────────────────────
