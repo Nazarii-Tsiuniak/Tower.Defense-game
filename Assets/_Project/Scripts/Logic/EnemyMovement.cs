@@ -137,6 +137,7 @@ public class EnemyMovement : MonoBehaviour
         if (healthBarFill == null) return;
         float ratio = Mathf.Clamp01((float)currentHP / maxHP);
         healthBarFill.localScale = new Vector3(ratio, 1f, 1f);
+        healthBarFill.localPosition = new Vector3(-0.46f + 0.46f * ratio, 0.55f, 0f);
 
         // Color: green → yellow → red
         var fillSR = healthBarFill.GetComponent<SpriteRenderer>();

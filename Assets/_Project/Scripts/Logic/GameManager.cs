@@ -120,6 +120,14 @@ public class GameManager : MonoBehaviour
     void SetState(GameState newState)
     {
         State = newState;
+
+        // Process RoundEnd BEFORE firing OnStateChanged so UI reads updated LastBonusGold
+        if (newState == GameState.RoundEnd)
+        {
+            ProcessRoundEnd();
+            if (State != GameState.RoundEnd) return; // transitioned to GameOver inside ProcessRoundEnd
+        }
+
         OnStateChanged?.Invoke(State);
 
         if (newState == GameState.Battle)
@@ -130,10 +138,6 @@ public class GameManager : MonoBehaviour
                 LaunchWave(wave);
             }
             // In HotSeat, wave is launched from GameUIManager after attacker submits
-        }
-        else if (newState == GameState.RoundEnd)
-        {
-            ProcessRoundEnd();
         }
     }
 
