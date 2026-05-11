@@ -7,6 +7,7 @@ public class TowerPlacement : MonoBehaviour
 {
     private GameObject previewGO;
     private SpriteRenderer previewSR;
+    private SpriteRenderer previewUnitSR;
     private SpriteRenderer rangeIndicatorSR;
 
     void Update()
@@ -75,6 +76,13 @@ public class TowerPlacement : MonoBehaviour
             previewSR = previewGO.AddComponent<SpriteRenderer>();
             previewSR.sortingOrder = 20;
 
+            var unitGO = new GameObject("PreviewUnit");
+            unitGO.transform.SetParent(previewGO.transform);
+            unitGO.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+            previewUnitSR = unitGO.AddComponent<SpriteRenderer>();
+            previewUnitSR.sortingOrder = 21;
+            previewUnitSR.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+
             var rangeGO = new GameObject("RangeIndicator");
             rangeGO.transform.SetParent(previewGO.transform);
             rangeGO.transform.localPosition = Vector3.zero;
@@ -87,6 +95,12 @@ public class TowerPlacement : MonoBehaviour
         previewGO.transform.position = pos;
         previewSR.sprite = SpriteGenerator.CreateTowerSprite(towerType);
         previewSR.color = valid ? new Color(1, 1, 1, 0.6f) : new Color(1, 0.3f, 0.3f, 0.6f);
+        if (previewUnitSR != null)
+        {
+            previewUnitSR.sprite = SpriteLoader.TowerUnitSprite(towerType);
+            previewUnitSR.color = previewSR.color;
+            previewUnitSR.enabled = previewUnitSR.sprite != null;
+        }
 
         float range = GetTowerRange(towerType);
         float scale = range * 2f;
@@ -133,6 +147,8 @@ public class TowerPlacement : MonoBehaviour
         sr.sprite = SpriteGenerator.CreateTowerSprite(towerType);
         sr.sortingOrder = 5;
 
+        AddTowerTopUnit(tower.transform, towerType);
+
         var ctrl = tower.AddComponent<TowerController>();
         if (TowerConfigs.TryGetValue(towerType, out TowerStats stats))
         {
@@ -152,5 +168,20 @@ public class TowerPlacement : MonoBehaviour
         if (TowerConfigs.TryGetValue(towerType, out TowerStats stats))
             return stats.range;
         return 3.0f;
+    }
+
+    static void AddTowerTopUnit(Transform towerRoot, string towerType)
+    {
+        var unitSprite = SpriteLoader.TowerUnitSprite(towerType);
+        if (unitSprite == null) return;
+
+        var topUnitGO = new GameObject("TowerUnit_" + towerType);
+        topUnitGO.transform.SetParent(towerRoot, false);
+        topUnitGO.transform.localPosition = new Vector3(0f, 0.42f, 0f);
+        topUnitGO.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+
+        var topSR = topUnitGO.AddComponent<SpriteRenderer>();
+        topSR.sprite = unitSprite;
+        topSR.sortingOrder = 6;
     }
 }

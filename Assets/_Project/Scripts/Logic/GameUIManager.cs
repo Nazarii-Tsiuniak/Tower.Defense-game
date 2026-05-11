@@ -538,6 +538,8 @@ public class GameUIManager : MonoBehaviour
     {
         int gold = GameManager.Instance != null ? GameManager.Instance.Gold : 0;
         bool canBuy = GameManager.Instance != null && GameManager.Instance.State == GameState.Preparation;
+        if (!string.IsNullOrEmpty(SelectedTowerType) && canBuy && gold < GetTowerCost(SelectedTowerType))
+            SelectedTowerType = null;
 
         for (int i = 0; i < towerButtons.Length; i++)
         {
@@ -566,7 +568,7 @@ public class GameUIManager : MonoBehaviour
                     outline.effectColor = Color.clear;
             }
 
-            towerButtons[i].interactable = canBuy;
+            towerButtons[i].interactable = affordable;
         }
 
         // Update selection hint text

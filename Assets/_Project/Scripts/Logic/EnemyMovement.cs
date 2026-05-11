@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EnemyMovement : MonoBehaviour
 {
@@ -25,6 +26,19 @@ public class EnemyMovement : MonoBehaviour
     private Transform healthBarBG;
     private Transform healthBarFill;
     private float healthBarWidth;
+
+    private const float HEALTH_BAR_WIDTH = 0.92f;
+
+    void Awake()
+    {
+        // Private Transform references are not serialized by Unity, so they are null
+        // in every copy created by Instantiate. Re-find them by name here so that
+        // UpdateHealthBar() works correctly on all spawned enemies.
+        var bgT = transform.Find("HealthBG");
+        if (bgT != null) healthBarBG = bgT;
+        var fillT = transform.Find("HealthFill");
+        if (fillT != null) { healthBarFill = fillT; healthBarWidth = HEALTH_BAR_WIDTH; }
+    }
 
     void OnEnable()
     {
@@ -67,7 +81,7 @@ public class EnemyMovement : MonoBehaviour
         fillSR.sprite = fillSprite;
         fillSR.sortingOrder = 13;
         healthBarFill = fillGO.transform;
-        healthBarWidth = 0.92f;
+        healthBarWidth = HEALTH_BAR_WIDTH;
     }
 
     void Update()

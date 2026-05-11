@@ -82,7 +82,7 @@ public class SceneBuilder : MonoBehaviour
 
     void CreateGrid()
     {
-        Sprite grassSprite = SpriteGenerator.CreateGrassTile();
+        Sprite[] grassVariants = SpriteGenerator.CreateGrassTileVariants();
         Sprite pathSprite = SpriteGenerator.CreatePathTile();
         Sprite entrySprite = SpriteGenerator.CreateEntryMarker();
         Sprite baseSprite = SpriteGenerator.CreateBaseMarker();
@@ -111,7 +111,7 @@ public class SceneBuilder : MonoBehaviour
                 else if (isPath)
                     sr.sprite = pathSprite;
                 else
-                    sr.sprite = grassSprite;
+                    sr.sprite = grassVariants[(col * 7 + row * 13) % grassVariants.Length];
             }
         }
     }
@@ -119,11 +119,16 @@ public class SceneBuilder : MonoBehaviour
     void CreateDecorations()
     {
         if (GridManager.Instance == null) return;
+        const float PropThreshold = 0.22f;   // 22%
+        const float TreeThreshold = 0.42f;   // +20%
+        const float BushThreshold = 0.62f;   // +20%
+        const float FlowerThreshold = 0.82f; // +20%
 
         Sprite treeSprite = SpriteGenerator.CreateTreeSprite();
         Sprite bushSprite = SpriteGenerator.CreateBushSprite();
         Sprite flowerSprite = SpriteGenerator.CreateFlowerSprite();
         Sprite rockSprite = SpriteGenerator.CreateRockSprite();
+        Sprite[] propSprites = SpriteLoader.LoadPropSprites(32);
 
         var decoParent = new GameObject("Decorations");
         var rng = new System.Random(123);
@@ -147,11 +152,15 @@ public class SceneBuilder : MonoBehaviour
                 sr.sortingOrder = 1;
 
                 float roll = (float)rng.NextDouble();
-                if (roll < 0.25f)
+                if (propSprites.Length > 0 && roll < PropThreshold)
+                {
+                    sr.sprite = propSprites[rng.Next(propSprites.Length)];
+                }
+                else if (roll < TreeThreshold)
                     sr.sprite = treeSprite;
-                else if (roll < 0.45f)
+                else if (roll < BushThreshold)
                     sr.sprite = bushSprite;
-                else if (roll < 0.70f)
+                else if (roll < FlowerThreshold)
                     sr.sprite = flowerSprite;
                 else
                     sr.sprite = rockSprite;

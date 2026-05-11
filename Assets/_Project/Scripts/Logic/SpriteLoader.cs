@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// Loads sprites from the downloaded PNG spritesheets.
@@ -17,20 +20,65 @@ public static class SpriteLoader
     const int TOWER_H = 32;
 
     // tileset1.png: grid of tiles
-    const int TILE_W = 16;
-    const int TILE_H = 16;
+    const int TILE_W = 32;
+    const int TILE_H = 32;
+    const int PROP_W = 16;
+    const int PROP_H = 16;
 
     // ── Cache ────────────────────────────────────────────────────
     static Texture2D _charTex;
     static Texture2D _towerTex;
     static Texture2D _tileTex;
     static Texture2D _propsTex;
+    static string _charTexName;
+    static string _towerTexName;
+    static string _tileTexName;
+    static string _propsTexName;
 
-    static Texture2D LoadTex(ref Texture2D cache, string path)
+    static Texture2D LoadTex(ref Texture2D cache, ref string cachedFileName, string fileName)
     {
+        if (cache != null && cachedFileName == fileName) return cache;
+
+        cache = null;
+        cachedFileName = fileName;
+
+        cache = Resources.Load<Texture2D>($"Sprites/{fileName}");
         if (cache == null)
-            cache = Resources.Load<Texture2D>(path);
+            cache = Resources.Load<Texture2D>(fileName);
+        if (cache == null && fileName == "tileset1")
+            cache = Resources.Load<Texture2D>("Craftpix/1 Tiles/FieldsTileset");
+
+#if UNITY_EDITOR
+        if (cache == null)
+        {
+            cache = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/Resources/Sprites/{fileName}.png");
+            if (cache == null)
+                cache = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{fileName}.png");
+            if (cache == null && fileName == "tileset1")
+                cache = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Craftpix/1 Tiles/FieldsTileset.png");
+        }
+#endif
+
         return cache;
+    }
+
+    static Texture2D LoadTextureAtPath(string path)
+    {
+#if UNITY_EDITOR
+        return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+#else
+        return null;
+#endif
+    }
+
+    static Sprite CreateFullSprite(Texture2D tex, float pixelsPerUnit = 32f)
+    {
+        if (tex == null) return null;
+        return Sprite.Create(
+            tex,
+            new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f),
+            pixelsPerUnit);
     }
 
     // ── Generic sheet cutter ─────────────────────────────────────
@@ -51,7 +99,7 @@ public static class SpriteLoader
     /// <summary>Load one of the 5 characters (0=Goblin 1=Slime 2=Knight 3=Archer 4=Mage)</summary>
     public static Sprite LoadCharacter(int index)
     {
-        var tex = LoadTex(ref _charTex, "Sprites/characters");
+        var tex = LoadTex(ref _charTex, ref _charTexName, "characters");
         return Cut(tex, index, 0, CHAR_W, CHAR_H);
     }
 
@@ -62,22 +110,115 @@ public static class SpriteLoader
     /// </summary>
     public static Sprite LoadTower(int typeRow, int levelCol = 0)
     {
-        var tex = LoadTex(ref _towerTex, "Sprites/towers");
+        var tex = LoadTex(ref _towerTex, ref _towerTexName, "towers");
         return Cut(tex, levelCol, typeRow, TOWER_W, TOWER_H);
+    }
+
+    public static Sprite LoadTile(int col, int row)
+    {
+        var tex = LoadTex(ref _tileTex, ref _tileTexName, "tileset1");
+        return Cut(tex, col, row, TILE_W, TILE_H);
+    }
+
+    public static Sprite LoadProp(int col, int row)
+    {
+        var tex = LoadTex(ref _propsTex, ref _propsTexName, "props");
+        return Cut(tex, col, row, PROP_W, PROP_H);
+    }
+
+    static bool HasVisiblePixels(Texture2D tex, Rect rect)
+    {
+        try
+        {
+            var pixels = tex.GetPixels(
+                Mathf.RoundToInt(rect.x),
+                Mathf.RoundToInt(rect.y),
+                Mathf.RoundToInt(rect.width),
+                Mathf.RoundToInt(rect.height));
+            int visible = 0;
+            for (int i = 0; i < pixels.Length; i++)
+                if (pixels[i].a > 0.1f) visible++;
+            return visible > pixels.Length * 0.08f;
+        }
+        catch
+        {
+            // If texture is not readable, treat as usable to avoid suppressing valid sprites.
+            return true;
+        }
+    }
+
+    /// <summary>Loads visible props from props.png, up to maxSprites.</summary>
+    public static Sprite[] LoadPropSprites(int maxSprites = 24)
+    {
+        var tex = LoadTex(ref _propsTex, ref _propsTexName, "props");
+        if (tex == null) return new Sprite[0];
+
+        int cols = tex.width / PROP_W;
+        int rows = tex.height / PROP_H;
+        var list = new System.Collections.Generic.List<Sprite>();
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                var s = Cut(tex, c, r, PROP_W, PROP_H);
+                if (s == null) continue;
+                if (!HasVisiblePixels(tex, s.rect)) continue;
+                list.Add(s);
+                if (list.Count >= maxSprites) return list.ToArray();
+            }
+        }
+        return list.ToArray();
     }
 
     /// <summary>Grass tile from tileset (col 0, row 0)</summary>
     public static Sprite LoadGrassTile()
     {
-        var tex = LoadTex(ref _tileTex, "Sprites/tileset1");
-        return Cut(tex, 0, 0, TILE_W, TILE_H);
+        return LoadTile(0, 0);
     }
 
     /// <summary>Path / cobblestone tile (col 1, row 0)</summary>
     public static Sprite LoadPathTile()
     {
-        var tex = LoadTex(ref _tileTex, "Sprites/tileset1");
-        return Cut(tex, 1, 0, TILE_W, TILE_H);
+        return LoadTile(1, 0);
+    }
+
+    public static Sprite[] LoadGrassTileVariantsFromSet()
+    {
+        var result = new System.Collections.Generic.List<Sprite>(4);
+        var coords = new (int c, int r)[] { (0, 0), (1, 0), (0, 1), (1, 1) };
+        for (int i = 0; i < coords.Length; i++)
+        {
+            var sprite = LoadTile(coords[i].c, coords[i].r);
+            if (sprite != null) result.Add(sprite);
+        }
+        return result.ToArray();
+    }
+
+    static Sprite LoadCraftpixTowerSprite(string name)
+    {
+        string path;
+        switch (name)
+        {
+            case "Archer":
+                path = "Assets/Craftpix/2 Objects/PlaceForTower1.png";
+                break;
+            case "Cannon":
+                path = "Assets/Craftpix/2 Objects/PlaceForTower2.png";
+                break;
+            case "Mage":
+                path = "Assets/Craftpix/2 Objects/8 Camp/1.png";
+                break;
+            case "Freezer":
+                path = "Assets/Craftpix/2 Objects/8 Camp/4.png";
+                break;
+            default:
+                path = "Assets/Craftpix/2 Objects/PlaceForTower1.png";
+                break;
+        }
+
+        var tex = LoadTextureAtPath(path);
+        return CreateFullSprite(tex, 32f);
     }
 
     // ── Named helpers used by SpriteGenerator ────────────────────
@@ -95,13 +236,40 @@ public static class SpriteLoader
 
     public static Sprite TowerSprite(string name)
     {
+        var craftpixTower = LoadCraftpixTowerSprite(name);
+        if (craftpixTower != null) return craftpixTower;
+
         switch (name)
         {
-            case "Archer":  return LoadTower(0, 0);
-            case "Cannon":  return LoadTower(1, 0);
-            case "Mage":    return LoadTower(2, 0);
-            case "Freezer": return LoadTower(2, 1);
-            default:        return LoadTower(0, 0);
+            // Prefer highest/tallest tower tier first, then gracefully fall back.
+            case "Archer":  return LoadTower(0, 2) ?? LoadTower(0, 1) ?? LoadTower(0, 0);
+            case "Cannon":  return LoadTower(1, 2) ?? LoadTower(1, 1) ?? LoadTower(1, 0);
+            case "Mage":    return LoadTower(2, 2) ?? LoadTower(2, 1) ?? LoadTower(2, 0);
+            case "Freezer": return LoadTower(2, 2) ?? LoadTower(2, 1) ?? LoadTower(2, 0);
+            default:        return LoadTower(0, 2) ?? LoadTower(0, 1) ?? LoadTower(0, 0);
+        }
+    }
+
+    static Sprite LoadCharacterFirst(params int[] indices)
+    {
+        for (int i = 0; i < indices.Length; i++)
+        {
+            var s = LoadCharacter(indices[i]);
+            if (s != null) return s;
+        }
+        return null;
+    }
+
+    /// <summary>Small character sprite that stands on top of a tower.</summary>
+    public static Sprite TowerUnitSprite(string towerName)
+    {
+        switch (towerName)
+        {
+            case "Archer":  return LoadCharacterFirst(3, 2, 0); // 3=Archer, 2=Knight, 0=Goblin fallback
+            case "Mage":    return LoadCharacterFirst(4, 2, 3); // 4=Mage, 2=Knight, 3=Archer fallback
+            case "Freezer": return LoadCharacterFirst(1, 4, 2); // 1=Slime, 4=Mage, 2=Knight fallback
+            case "Cannon":  return LoadCharacterFirst(2, 3, 0); // 2=Knight, 3=Archer, 0=Goblin fallback
+            default:        return LoadCharacterFirst(2, 0);
         }
     }
 
@@ -112,5 +280,9 @@ public static class SpriteLoader
         _towerTex = null;
         _tileTex  = null;
         _propsTex = null;
+        _charTexName = null;
+        _towerTexName = null;
+        _tileTexName = null;
+        _propsTexName = null;
     }
 }
