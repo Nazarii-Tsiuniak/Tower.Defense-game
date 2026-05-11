@@ -31,6 +31,7 @@ public static class SpriteLoader
     static string _charTexName;
     static string _towerTexName;
     static string _tileTexName;
+    static string _propsTexName;
 
     static Texture2D LoadTex(ref Texture2D cache, ref string cachedFileName, string fileName)
     {
@@ -94,6 +95,57 @@ public static class SpriteLoader
         return Cut(tex, col, row, TILE_W, TILE_H);
     }
 
+    public static Sprite LoadProp(int col, int row)
+    {
+        var tex = LoadTex(ref _propsTex, ref _propsTexName, "props");
+        return Cut(tex, col, row, TILE_W, TILE_H);
+    }
+
+    static bool HasVisiblePixels(Texture2D tex, Rect rect)
+    {
+        try
+        {
+            var pixels = tex.GetPixels(
+                Mathf.RoundToInt(rect.x),
+                Mathf.RoundToInt(rect.y),
+                Mathf.RoundToInt(rect.width),
+                Mathf.RoundToInt(rect.height));
+            int visible = 0;
+            for (int i = 0; i < pixels.Length; i++)
+                if (pixels[i].a > 0.1f) visible++;
+            return visible > pixels.Length * 0.08f;
+        }
+        catch
+        {
+            // If texture is not readable, treat as usable to avoid suppressing valid sprites.
+            return true;
+        }
+    }
+
+    /// <summary>Loads visible props from props.png, up to maxSprites.</summary>
+    public static Sprite[] LoadPropSprites(int maxSprites = 24)
+    {
+        var tex = LoadTex(ref _propsTex, ref _propsTexName, "props");
+        if (tex == null) return new Sprite[0];
+
+        int cols = tex.width / TILE_W;
+        int rows = tex.height / TILE_H;
+        var list = new System.Collections.Generic.List<Sprite>();
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                var s = Cut(tex, c, r, TILE_W, TILE_H);
+                if (s == null) continue;
+                if (!HasVisiblePixels(tex, s.rect)) continue;
+                list.Add(s);
+                if (list.Count >= maxSprites) return list.ToArray();
+            }
+        }
+        return list.ToArray();
+    }
+
     /// <summary>Grass tile from tileset (col 0, row 0)</summary>
     public static Sprite LoadGrassTile()
     {
@@ -123,11 +175,35 @@ public static class SpriteLoader
     {
         switch (name)
         {
-            case "Archer":  return LoadTower(0, 0);
-            case "Cannon":  return LoadTower(1, 0);
-            case "Mage":    return LoadTower(2, 0);
-            case "Freezer": return LoadTower(2, 1);
-            default:        return LoadTower(0, 0);
+            // Prefer highest/tallest tower tier first, then gracefully fall back.
+            case "Archer":  return LoadTower(0, 2) ?? LoadTower(0, 1) ?? LoadTower(0, 0);
+            case "Cannon":  return LoadTower(1, 2) ?? LoadTower(1, 1) ?? LoadTower(1, 0);
+            case "Mage":    return LoadTower(2, 2) ?? LoadTower(2, 1) ?? LoadTower(2, 0);
+            case "Freezer": return LoadTower(2, 2) ?? LoadTower(2, 1) ?? LoadTower(2, 0);
+            default:        return LoadTower(0, 2) ?? LoadTower(0, 1) ?? LoadTower(0, 0);
+        }
+    }
+
+    static Sprite LoadCharacterFirst(params int[] indices)
+    {
+        for (int i = 0; i < indices.Length; i++)
+        {
+            var s = LoadCharacter(indices[i]);
+            if (s != null) return s;
+        }
+        return null;
+    }
+
+    /// <summary>Small character sprite that stands on top of a tower.</summary>
+    public static Sprite TowerUnitSprite(string towerName)
+    {
+        switch (towerName)
+        {
+            case "Archer":  return LoadCharacterFirst(3, 2, 0); // Archer/Knight fallback
+            case "Mage":    return LoadCharacterFirst(4, 2, 3); // Mage may be absent in some sheets
+            case "Freezer": return LoadCharacterFirst(1, 4, 2); // Slime/mage-like caster fallback
+            case "Cannon":  return LoadCharacterFirst(2, 3, 0); // Knight/Archer fallback
+            default:        return LoadCharacterFirst(2, 0);
         }
     }
 
@@ -141,5 +217,6 @@ public static class SpriteLoader
         _charTexName = null;
         _towerTexName = null;
         _tileTexName = null;
+        _propsTexName = null;
     }
 }

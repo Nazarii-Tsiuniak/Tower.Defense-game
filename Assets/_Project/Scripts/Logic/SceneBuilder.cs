@@ -124,6 +124,7 @@ public class SceneBuilder : MonoBehaviour
         Sprite bushSprite = SpriteGenerator.CreateBushSprite();
         Sprite flowerSprite = SpriteGenerator.CreateFlowerSprite();
         Sprite rockSprite = SpriteGenerator.CreateRockSprite();
+        Sprite[] propSprites = SpriteLoader.LoadPropSprites(32);
 
         var decoParent = new GameObject("Decorations");
         var rng = new System.Random(123);
@@ -147,11 +148,15 @@ public class SceneBuilder : MonoBehaviour
                 sr.sortingOrder = 1;
 
                 float roll = (float)rng.NextDouble();
-                if (roll < 0.25f)
+                if (propSprites.Length > 0 && roll < 0.22f)
+                {
+                    sr.sprite = propSprites[rng.Next(propSprites.Length)];
+                }
+                else if (roll < 0.42f)
                     sr.sprite = treeSprite;
-                else if (roll < 0.45f)
+                else if (roll < 0.62f)
                     sr.sprite = bushSprite;
-                else if (roll < 0.70f)
+                else if (roll < 0.82f)
                     sr.sprite = flowerSprite;
                 else
                     sr.sprite = rockSprite;
