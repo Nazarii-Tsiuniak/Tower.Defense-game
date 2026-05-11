@@ -60,14 +60,21 @@ public class TowerController : MonoBehaviour
             default:        projColor = Color.white; break;
         }
 
-        var projGO = new GameObject("Projectile_" + towerName);
+        string poolKey = "Projectile_" + towerName;
+        Color cachedColor = projColor;
+        var projGO = ObjectPooler.Instance.SpawnFromPool(poolKey, () =>
+        {
+            var go = new GameObject(poolKey);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = SpriteGenerator.CreateProjectileSprite(cachedColor);
+            sr.sortingOrder = 15;
+            go.AddComponent<Projectile>();
+            return go;
+        }, transform.position);
+
         projGO.transform.position = transform.position;
 
-        var sr = projGO.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteGenerator.CreateProjectileSprite(projColor);
-        sr.sortingOrder = 15;
-
-        var proj = projGO.AddComponent<Projectile>();
+        var proj = projGO.GetComponent<Projectile>();
         proj.target = target;
         proj.targetPosition = target.transform.position;
         proj.damage = Mathf.RoundToInt(damage);

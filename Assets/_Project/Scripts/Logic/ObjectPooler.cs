@@ -34,6 +34,28 @@ public class ObjectPooler : MonoBehaviour
         return obj;
     }
 
+    public GameObject SpawnFromPool(string key, System.Func<GameObject> factory, Vector3 position)
+    {
+        if (!poolDictionary.ContainsKey(key))
+            poolDictionary.Add(key, new Queue<GameObject>());
+
+        GameObject obj;
+        if (poolDictionary[key].Count == 0)
+        {
+            obj = factory();
+            obj.name = key;
+        }
+        else
+        {
+            obj = poolDictionary[key].Dequeue();
+            obj.transform.position = position;
+            obj.transform.rotation = Quaternion.identity;
+        }
+
+        obj.SetActive(true);
+        return obj;
+    }
+
     public void ReturnToPool(GameObject obj)
     {
         obj.SetActive(false);

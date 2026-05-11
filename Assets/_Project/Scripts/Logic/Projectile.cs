@@ -13,13 +13,14 @@ public class Projectile : MonoBehaviour
 
     private bool hasHit;
 
+    void OnEnable()
+    {
+        hasHit = false;
+    }
+
     void Update()
     {
-        if (hasHit)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (hasHit) return;
 
         Vector3 destination;
         if (target != null && target.gameObject.activeInHierarchy)
@@ -94,6 +95,6 @@ public class Projectile : MonoBehaviour
                 break;
         }
 
-        Destroy(gameObject);
+        ObjectPooler.Instance.ReturnToPool(gameObject);
     }
 }
