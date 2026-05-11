@@ -152,6 +152,10 @@ public static class SpriteGenerator
     /// </summary>
     public static Sprite[] CreateGrassTileVariants()
     {
+        var loadedVariants = SpriteLoader.LoadGrassTileVariantsFromSet();
+        if (loadedVariants != null && loadedVariants.Length > 0)
+            return loadedVariants;
+
         int[]   seeds        = { 42,     77,     123,    200    };
         float[] greenShifts  = { 0f,    -0.04f,  0.05f, -0.02f };
         float[] brightShifts = { 0f,     0.03f, -0.03f,  0.02f };
