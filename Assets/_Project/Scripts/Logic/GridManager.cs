@@ -19,65 +19,77 @@ public class GridManager : MonoBehaviour
 
     private CellType[,] grid = new CellType[Cols, Rows];
 
-    // Path cells matching the sandy road on map.png (col, row), row 0 = top
-    // Grid: 22 cols × 12 rows. Path read from the image:
-    //  Cave at col~1,row~4 → right to col~3 → down to row~7 → left to col~1 → down to row~9
-    //  → right to col~7 → up to row~4 → right through upper bridge (col~11) → col~12
-    //  → down to row~9 → left through lower bridge (col~11) → right to castle col~20
+    // Path cells derived by counting grid squares from the user's hand-drawn black line.
+    // map.png 1407x768, PPU=64 → 22×12 grid, cell centers at pixel = (col+0.484)*64 x (row+0.5)*64
+    //
+    // Route (traced from user drawing):
+    //  Cave (1,4) → RIGHT col 1-6, row 4
+    //  → DOWN col 6, row 4-6
+    //  → LEFT col 6-1, row 6
+    //  → DOWN col 1, row 6-8
+    //  → RIGHT col 1-9, row 8
+    //  → UP col 9, row 8-4
+    //  → RIGHT col 9-14, row 4  (crosses upper bridge at col 12-13)
+    //  → DOWN col 14, row 4-8
+    //  → RIGHT col 14-18, row 8  (castle entrance)
     public static readonly Vector2Int[] PathCells = new Vector2Int[]
     {
-        // Seg 1: right from cave
+        // Seg 1: right from cave, row 4
         new Vector2Int(1,4), new Vector2Int(2,4), new Vector2Int(3,4),
-        // Seg 2: down
-        new Vector2Int(3,5), new Vector2Int(3,6), new Vector2Int(3,7),
-        // Seg 3: left
-        new Vector2Int(2,7), new Vector2Int(1,7),
-        // Seg 4: down
-        new Vector2Int(1,8), new Vector2Int(1,9),
-        // Seg 5: right
-        new Vector2Int(2,9), new Vector2Int(3,9), new Vector2Int(4,9),
-        new Vector2Int(5,9), new Vector2Int(6,9), new Vector2Int(7,9),
-        // Seg 6: up
-        new Vector2Int(7,8), new Vector2Int(7,7), new Vector2Int(7,6),
-        new Vector2Int(7,5), new Vector2Int(7,4),
-        // Seg 7: right to upper bridge
-        new Vector2Int(8,4), new Vector2Int(9,4), new Vector2Int(10,4),
-        new Vector2Int(11,4), new Vector2Int(12,4),
-        // Seg 8: down
-        new Vector2Int(12,5), new Vector2Int(12,6), new Vector2Int(12,7),
-        new Vector2Int(12,8), new Vector2Int(12,9),
-        // Seg 9: left through lower bridge
-        new Vector2Int(11,9), new Vector2Int(10,9),
-        // Seg 10: right to castle
-        new Vector2Int(13,9), new Vector2Int(14,9), new Vector2Int(15,9),
-        new Vector2Int(16,9), new Vector2Int(17,9), new Vector2Int(18,9),
-        new Vector2Int(19,9), new Vector2Int(20,9)
+        new Vector2Int(4,4), new Vector2Int(5,4), new Vector2Int(6,4),
+        // Seg 2: down col 6
+        new Vector2Int(6,5), new Vector2Int(6,6),
+        // Seg 3: left row 6
+        new Vector2Int(5,6), new Vector2Int(4,6), new Vector2Int(3,6),
+        new Vector2Int(2,6), new Vector2Int(1,6),
+        // Seg 4: down col 1
+        new Vector2Int(1,7), new Vector2Int(1,8),
+        // Seg 5: right row 8
+        new Vector2Int(2,8), new Vector2Int(3,8), new Vector2Int(4,8),
+        new Vector2Int(5,8), new Vector2Int(6,8), new Vector2Int(7,8),
+        new Vector2Int(8,8), new Vector2Int(9,8),
+        // Seg 6: up col 9
+        new Vector2Int(9,7), new Vector2Int(9,6), new Vector2Int(9,5),
+        new Vector2Int(9,4),
+        // Seg 7: right row 4 (cols 9-14, crossing river bridge at col 13)
+        new Vector2Int(10,4), new Vector2Int(11,4), new Vector2Int(12,4),
+        new Vector2Int(13,4), new Vector2Int(14,4),
+        // Seg 8: down col 14
+        new Vector2Int(14,5), new Vector2Int(14,6), new Vector2Int(14,7),
+        new Vector2Int(14,8),
+        // Seg 9: right row 8 to castle
+        new Vector2Int(15,8), new Vector2Int(16,8), new Vector2Int(17,8),
+        new Vector2Int(18,8)
     };
 
-    // River cells: col 11, rows 5-8 (bridge at row 4 top and row 9 bottom)
+    // River (col 13) — all rows except row 4 (upper bridge = path tile)
     public static readonly Vector2Int[] WaterCells = new Vector2Int[]
     {
-        new Vector2Int(11,5), new Vector2Int(11,6),
-        new Vector2Int(11,7), new Vector2Int(11,8)
+        new Vector2Int(13,0),  new Vector2Int(13,1),  new Vector2Int(13,2),
+        new Vector2Int(13,3),
+        // row 4 is the bridge (PathCell), skip it
+        new Vector2Int(13,5),  new Vector2Int(13,6),  new Vector2Int(13,7),
+        new Vector2Int(13,8),  new Vector2Int(13,9),  new Vector2Int(13,10),
+        new Vector2Int(13,11)
     };
 
-    // Waypoints for EnemyMovement (turning points only)
+    // Waypoints: turning-point corners of the route
     public static readonly Vector2Int[] WaypointCells = new Vector2Int[]
     {
         new Vector2Int(1,  4),  // cave exit
-        new Vector2Int(3,  4),  // turn down
-        new Vector2Int(3,  7),  // turn left
-        new Vector2Int(1,  7),  // turn down
-        new Vector2Int(1,  9),  // turn right
-        new Vector2Int(7,  9),  // turn up
-        new Vector2Int(7,  4),  // turn right
-        new Vector2Int(12, 4),  // after upper bridge, turn down
-        new Vector2Int(12, 9),  // turn right (lower)
-        new Vector2Int(20, 9),  // castle
+        new Vector2Int(6,  4),  // turn right→down
+        new Vector2Int(6,  6),  // turn down→left
+        new Vector2Int(1,  6),  // turn left→down
+        new Vector2Int(1,  8),  // turn down→right
+        new Vector2Int(9,  8),  // turn right→up
+        new Vector2Int(9,  4),  // turn up→right (before upper bridge)
+        new Vector2Int(14, 4),  // turn right→down (east of upper bridge)
+        new Vector2Int(14, 8),  // turn down→right
+        new Vector2Int(18, 8),  // castle entrance
     };
 
     public Vector2Int EntryCell => new Vector2Int(1, 4);
-    public Vector2Int BaseCell  => new Vector2Int(20, 9);
+    public Vector2Int BaseCell  => new Vector2Int(18, 8);
 
     private HashSet<Vector2Int> pathSet = new HashSet<Vector2Int>();
     private HashSet<Vector2Int> waterSet = new HashSet<Vector2Int>();
