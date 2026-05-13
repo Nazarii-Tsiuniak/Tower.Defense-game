@@ -964,4 +964,59 @@ public static class SpriteGenerator
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
     }
+
+    // ==================== BRIDGE TILE (wooden planks over river) ====================
+    public static Sprite CreateBridgeTile()
+    {
+        int s = 32;
+        var tex = new Texture2D(s, s);
+        tex.filterMode = FilterMode.Point;
+
+        // Transparent base
+        for (int y = 0; y < s; y++)
+            for (int x = 0; x < s; x++)
+                tex.SetPixel(x, y, Color.clear);
+
+        Color plank     = new Color(0.62f, 0.42f, 0.20f);
+        Color plankDk   = new Color(0.45f, 0.30f, 0.13f);
+        Color plankHi   = new Color(0.78f, 0.55f, 0.28f);
+        Color rail      = new Color(0.38f, 0.24f, 0.10f);
+        Color rope      = new Color(0.68f, 0.55f, 0.30f);
+
+        // Horizontal planks (bridge goes left-right)
+        int[] plankYStarts = { 5, 9, 13, 17, 21, 25 };
+        foreach (int py in plankYStarts)
+        {
+            for (int x = 2; x < s - 2; x++)
+            {
+                for (int y = py; y < py + 3 && y < s; y++)
+                {
+                    Color c = plank;
+                    if (y == py) c = plankHi;
+                    if (y == py + 2) c = plankDk;
+                    if (x == 2 || x == s - 3) c = rail;
+                    tex.SetPixel(x, y, c);
+                }
+            }
+        }
+
+        // Side rails (vertical beams)
+        for (int y = 3; y < s - 3; y++)
+        {
+            tex.SetPixel(2,  y, rail);
+            tex.SetPixel(3,  y, rail);
+            tex.SetPixel(s - 3, y, rail);
+            tex.SetPixel(s - 4, y, rail);
+        }
+
+        // Rope / cable lines along top and bottom edges
+        for (int x = 4; x < s - 4; x++)
+        {
+            tex.SetPixel(x, 2, rope);
+            tex.SetPixel(x, s - 3, rope);
+        }
+
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
+    }
 }

@@ -12,6 +12,7 @@ public class SceneBuilder : MonoBehaviour
         CreateManagers();
         CreateMapBorder();
         CreateGrid();
+        CreateRiver();
         CreateDecorations();
         CreateWaypointPath();
         CreateEnemyTemplates();
@@ -84,6 +85,7 @@ public class SceneBuilder : MonoBehaviour
     {
         Sprite grassSprite = SpriteGenerator.CreateGrassTile();
         Sprite pathSprite = SpriteGenerator.CreatePathTile();
+        Sprite waterSprite = SpriteGenerator.CreateWaterTile();
         Sprite entrySprite = SpriteGenerator.CreateEntryMarker();
         Sprite baseSprite = SpriteGenerator.CreateBaseMarker();
 
@@ -95,6 +97,7 @@ public class SceneBuilder : MonoBehaviour
             {
                 Vector3 pos = GridManager.CellToWorld(col, row);
                 bool isPath = GridManager.Instance != null && GridManager.Instance.IsPath(col, row);
+                bool isWater = GridManager.Instance != null && GridManager.Instance.IsWater(col, row);
 
                 var tile = new GameObject("Tile_" + col + "_" + row);
                 tile.transform.SetParent(gridParent.transform);
@@ -108,12 +111,32 @@ public class SceneBuilder : MonoBehaviour
                     sr.sprite = entrySprite;
                 else if (cell == GridManager.Instance.BaseCell)
                     sr.sprite = baseSprite;
+                else if (isWater)
+                    sr.sprite = waterSprite;
                 else if (isPath)
                     sr.sprite = pathSprite;
                 else
                     sr.sprite = grassSprite;
             }
         }
+    }
+
+    // Creates the river and bridge visuals
+    void CreateRiver()
+    {
+        if (GridManager.Instance == null) return;
+        var riverParent = new GameObject("River");
+
+        Sprite bridgeSprite = SpriteGenerator.CreateBridgeTile();
+
+        // Bridge overlay at col 7, row 6 (path crosses river here)
+        Vector3 bridgePos = GridManager.CellToWorld(7, 6);
+        var bridgeGO = new GameObject("Bridge_7_6");
+        bridgeGO.transform.SetParent(riverParent.transform);
+        bridgeGO.transform.position = bridgePos;
+        var bridgeSR = bridgeGO.AddComponent<SpriteRenderer>();
+        bridgeSR.sprite = bridgeSprite;
+        bridgeSR.sortingOrder = 1;
     }
 
     void CreateDecorations()
@@ -133,6 +156,7 @@ public class SceneBuilder : MonoBehaviour
             for (int row = 0; row < GridManager.Rows; row++)
             {
                 if (GridManager.Instance.IsPath(col, row)) continue;
+                if (GridManager.Instance.IsWater(col, row)) continue;
                 if (rng.NextDouble() > 0.22) continue;
 
                 Vector3 pos = GridManager.CellToWorld(col, row);

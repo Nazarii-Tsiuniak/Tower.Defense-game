@@ -15,36 +15,52 @@ public class GridManager : MonoBehaviour
     private CellType[,] grid = new CellType[Cols, Rows];
 
     // Path defined as cell coordinates (col, row)
-    // S-shaped path: entry at (0,5), exit/base at (11,5)
+    // Winding S-curve map: cave entry at (0,6), castle base at (11,2)
+    // Visual layout (row 7=top, row 0=bottom):
+    //  Cave → right → down → right → UP → right (bridge over river) → down → right → Castle
     public static readonly Vector2Int[] PathCells = new Vector2Int[]
     {
-        // Segment 1: right along row 5
-        new Vector2Int(0, 5), new Vector2Int(1, 5), new Vector2Int(2, 5), new Vector2Int(3, 5),
-        // Segment 2: down from row 5 to row 1
-        new Vector2Int(3, 4), new Vector2Int(3, 3), new Vector2Int(3, 2), new Vector2Int(3, 1),
-        // Segment 3: right along row 1
-        new Vector2Int(4, 1), new Vector2Int(5, 1), new Vector2Int(6, 1), new Vector2Int(7, 1),
-        // Segment 4: up from row 1 to row 5
-        new Vector2Int(7, 2), new Vector2Int(7, 3), new Vector2Int(7, 4), new Vector2Int(7, 5),
-        // Segment 5: right along row 5 to base
-        new Vector2Int(8, 5), new Vector2Int(9, 5), new Vector2Int(10, 5), new Vector2Int(11, 5)
+        // Segment 1: right along row 6 from cave
+        new Vector2Int(0, 6), new Vector2Int(1, 6), new Vector2Int(2, 6), new Vector2Int(3, 6),
+        // Segment 2: down col 3
+        new Vector2Int(3, 5), new Vector2Int(3, 4), new Vector2Int(3, 3), new Vector2Int(3, 2),
+        // Segment 3: right along row 2
+        new Vector2Int(4, 2), new Vector2Int(5, 2), new Vector2Int(6, 2),
+        // Segment 4: up col 6
+        new Vector2Int(6, 3), new Vector2Int(6, 4), new Vector2Int(6, 5), new Vector2Int(6, 6),
+        // Segment 5: right along row 6 — bridge over river at col 7
+        new Vector2Int(7, 6), new Vector2Int(8, 6),
+        // Segment 6: down col 8
+        new Vector2Int(8, 5), new Vector2Int(8, 4), new Vector2Int(8, 3), new Vector2Int(8, 2),
+        // Segment 7: right along row 2 to castle
+        new Vector2Int(9, 2), new Vector2Int(10, 2), new Vector2Int(11, 2)
     };
 
-    // Waypoints: only turning points + entry/exit for enemy movement
+    // Waypoints: turning points + entry/exit used by EnemyMovement
     public static readonly Vector2Int[] WaypointCells = new Vector2Int[]
     {
-        new Vector2Int(0, 5),   // entry
-        new Vector2Int(3, 5),   // first turn
-        new Vector2Int(3, 1),   // second turn
-        new Vector2Int(7, 1),   // third turn
-        new Vector2Int(7, 5),   // fourth turn
-        new Vector2Int(11, 5)   // base/exit
+        new Vector2Int(0, 6),   // entry (cave)
+        new Vector2Int(3, 6),   // turn: right → down
+        new Vector2Int(3, 2),   // turn: down → right
+        new Vector2Int(6, 2),   // turn: right → up
+        new Vector2Int(6, 6),   // turn: up → right
+        new Vector2Int(8, 6),   // turn: right → down  (after bridge)
+        new Vector2Int(8, 2),   // turn: down → right
+        new Vector2Int(11, 2)   // base/exit (castle)
     };
 
-    public Vector2Int EntryCell => new Vector2Int(0, 5);
-    public Vector2Int BaseCell => new Vector2Int(11, 5);
+    // River cells: col 7, rows 0-5 (row 6 is the bridge path tile)
+    public static readonly Vector2Int[] WaterCells = new Vector2Int[]
+    {
+        new Vector2Int(7, 0), new Vector2Int(7, 1), new Vector2Int(7, 2),
+        new Vector2Int(7, 3), new Vector2Int(7, 4), new Vector2Int(7, 5)
+    };
+
+    public Vector2Int EntryCell => new Vector2Int(0, 6);
+    public Vector2Int BaseCell => new Vector2Int(11, 2);
 
     private HashSet<Vector2Int> pathSet = new HashSet<Vector2Int>();
+    private HashSet<Vector2Int> waterSet = new HashSet<Vector2Int>();
 
     void Awake()
     {
@@ -62,6 +78,13 @@ public class GridManager : MonoBehaviour
         {
             grid[cell.x, cell.y] = CellType.Path;
             pathSet.Add(cell);
+        }
+
+        foreach (var cell in WaterCells)
+        {
+            // Water cells cannot have towers (treat as Path for placement purposes)
+            grid[cell.x, cell.y] = CellType.Path;
+            waterSet.Add(cell);
         }
     }
 
@@ -115,6 +138,11 @@ public class GridManager : MonoBehaviour
     public bool IsPath(int col, int row)
     {
         return pathSet.Contains(new Vector2Int(col, row));
+    }
+
+    public bool IsWater(int col, int row)
+    {
+        return waterSet.Contains(new Vector2Int(col, row));
     }
 
     public CellType GetCell(int col, int row)
