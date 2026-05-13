@@ -7,15 +7,122 @@ public class BackgroundMusic : MonoBehaviour
     private const int SampleRate = 44100;
     private const float MasterVolume = 0.28f;
 
+    private AudioSource bgSource;
+    private AudioSource sfxSource;  // one-shot jingles
+
     void Start()
     {
-        var src = gameObject.AddComponent<AudioSource>();
-        src.clip = BuildTrack();
-        src.loop = true;
-        src.volume = MasterVolume;
-        src.spatialBlend = 0f;  // 2D
-        src.playOnAwake = false;
-        src.Play();
+        bgSource = gameObject.AddComponent<AudioSource>();
+        bgSource.clip = BuildTrack();
+        bgSource.loop = true;
+        bgSource.volume = MasterVolume;
+        bgSource.spatialBlend = 0f;
+        bgSource.playOnAwake = false;
+        bgSource.Play();
+
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.loop = false;
+        sfxSource.spatialBlend = 0f;
+        sfxSource.volume = 0.55f;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStateChanged += OnStateChanged;
+    }
+
+    void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStateChanged -= OnStateChanged;
+    }
+
+    void OnStateChanged(GameState state)
+    {
+        if (state == GameState.RoundEnd)
+        {
+            // Short triumphant ascending fanfare
+            sfxSource.clip = BuildRoundWinJingle();
+            sfxSource.Play();
+        }
+        else if (state == GameState.GameOver)
+        {
+            if (GameManager.Instance != null && GameManager.Instance.DefenderWon)
+            {
+                // Full victory: bright ascending chord
+                sfxSource.clip = BuildVictoryJingle();
+                sfxSource.Play();
+            }
+            else
+            {
+                // Defeat: descending minor descent
+                sfxSource.clip = BuildDefeatJingle();
+                sfxSource.Play();
+            }
+        }
+    }
+
+    // ── Round Win: short ascending arpeggio C4-E4-G4-C5 ──────────────────
+    AudioClip BuildRoundWinJingle()
+    {
+        float[] freqs  = { 261.63f, 329.63f, 392.00f, 523.25f };  // C4 E4 G4 C5
+        float[] beats  = { 0.18f,   0.18f,   0.18f,   0.55f   };
+        return BuildArpeggio(freqs, beats, 0.85f, volume: 0.7f);
+    }
+
+    // ── Full Victory: triumphant fanfare C4-E4-G4-C5, held + G4-C5-E5 ────
+    AudioClip BuildVictoryJingle()
+    {
+        float[] freqs = { 261.63f, 329.63f, 392.00f, 523.25f, 392.00f, 523.25f, 659.26f };
+        float[] beats = { 0.15f,   0.15f,   0.15f,   0.40f,   0.15f,   0.15f,   0.80f   };
+        return BuildArpeggio(freqs, beats, 0.92f, volume: 0.75f);
+    }
+
+    // ── Defeat: descending minor G4-Eb4-C4-A3 ────────────────────────────
+    AudioClip BuildDefeatJingle()
+    {
+        float[] freqs = { 392.00f, 311.13f, 261.63f, 220.00f };  // G4 Eb4 C4 A3
+        float[] beats = { 0.25f,   0.30f,   0.35f,   0.90f   };
+        return BuildArpeggio(freqs, beats, 0.72f, volume: 0.65f);
+    }
+
+    // Generic: play a sequence of notes with given frequencies and durations
+    AudioClip BuildArpeggio(float[] freqs, float[] durations, float speed, float volume)
+    {
+        float totalDur = 0f;
+        for (int i = 0; i < durations.Length; i++) totalDur += durations[i] / speed;
+        int totalSamples = Mathf.CeilToInt(totalDur * SampleRate);
+        float[] data = new float[totalSamples];
+
+        int pos = 0;
+        for (int i = 0; i < freqs.Length; i++)
+        {
+            float freq     = freqs[i];
+            float dur      = durations[i] / speed;
+            int noteSamples = Mathf.RoundToInt(dur * SampleRate);
+            int attack  = Mathf.RoundToInt(0.012f * SampleRate);
+            int release = Mathf.RoundToInt(Mathf.Min(0.15f, dur * 0.45f) * SampleRate);
+
+            for (int s = 0; s < noteSamples && pos + s < data.Length; s++)
+            {
+                float t = (float)s / SampleRate;
+                float wave = Mathf.Sin(2f * Mathf.PI * freq * t)
+                           + 0.40f * Mathf.Sin(2f * Mathf.PI * freq * 2f * t)
+                           + 0.15f * Mathf.Sin(2f * Mathf.PI * freq * 3f * t);
+                wave /= 1.55f;
+
+                float env = 1f;
+                if (s < attack)
+                    env = (float)s / attack;
+                else if (s > noteSamples - release)
+                    env = (float)(noteSamples - s) / release;
+
+                data[pos + s] = wave * env * volume;
+            }
+            pos += noteSamples;
+        }
+
+        var clip = AudioClip.Create("Jingle", totalSamples, 1, SampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
     }
 
     // ── note frequencies (Hz) ──────────────────────────────────────────────
