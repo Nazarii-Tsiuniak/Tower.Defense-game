@@ -107,16 +107,33 @@ public class SceneBuilder : MonoBehaviour
 
     void CreateWaypointPath()
     {
-        var pathGO = new GameObject("WaypointPath");
-
-        foreach (var wp in GridManager.WaypointCells)
+        // World coordinates derived directly from map.png (1407x768, PPU=96, centered at 0,0)
+        // Formula: worldX = pixelX/96 - 7.328,  worldY = 4.0 - pixelY/96
+        // Points follow the sandy path on the image: cave → winding → upper bridge → lower bridge → castle
+        Vector3[] waypoints = new Vector3[]
         {
-            Vector3 pos = GridManager.CellToWorld(wp);
-            var waypointGO = new GameObject("WP_" + wp.x + "_" + wp.y);
-            waypointGO.transform.SetParent(pathGO.transform);
-            waypointGO.transform.position = pos;
-        }
+            new Vector3(-6.5f,  0.72f, 0f),   // Cave entrance (left side)
+            new Vector3(-5.1f,  0.72f, 0f),   // Turn: right → down
+            new Vector3(-5.1f, -1.10f, 0f),   // Turn: down → left
+            new Vector3(-6.4f, -1.10f, 0f),   // Turn: left → down
+            new Vector3(-6.4f, -2.00f, 0f),   // Turn: down → right (bottom loop)
+            new Vector3(-2.8f, -2.00f, 0f),   // Turn: right → up
+            new Vector3(-2.8f,  0.83f, 0f),   // Turn: up → right (upper path)
+            new Vector3( 0.5f,  1.34f, 0f),   // Upper bridge (cross river)
+            new Vector3( 2.06f, 1.34f, 0f),   // After upper bridge → turn down
+            new Vector3( 2.06f,-1.68f, 0f),   // Turn: down → left (lower path)
+            new Vector3( 0.5f, -1.68f, 0f),   // Lower bridge (cross river)
+            new Vector3( 2.06f,-1.68f, 0f),   // After lower bridge → turn right
+            new Vector3( 5.70f,-1.68f, 0f),   // Castle entrance (right side)
+        };
 
+        var pathGO = new GameObject("WaypointPath");
+        for (int i = 0; i < waypoints.Length; i++)
+        {
+            var waypointGO = new GameObject("WP_" + i);
+            waypointGO.transform.SetParent(pathGO.transform);
+            waypointGO.transform.position = waypoints[i];
+        }
         pathGO.AddComponent<WaypointPath>();
     }
 

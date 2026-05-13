@@ -172,6 +172,7 @@ public class GridManager : MonoBehaviour
 
     public Vector3 GetEntryWorldPos()
     {
-        return CellToWorld(EntryCell) + Vector3.left * 1.5f;
+        // Cave entrance on map.png — slightly left of first waypoint so enemy enters from outside
+        return new Vector3(-7.2f, 0.72f, 0f);
     }
 }
