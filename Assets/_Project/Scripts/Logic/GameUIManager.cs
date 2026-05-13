@@ -20,10 +20,10 @@ public class GameUIManager : MonoBehaviour
 
     public static readonly TowerInfo[] TowerInfos = new TowerInfo[]
     {
-        new TowerInfo("Archer",  "Лучник",       100, "Одна ціль, середня швидкість"),
-        new TowerInfo("Mage",    "Маг",          150, "Область ураження (AoE)"),
-        new TowerInfo("Freezer", "Заморожувач",  120, "Уповільнює ворогів"),
-        new TowerInfo("Cannon",  "Гарматник",    200, "Велика шкода, повільний")
+        new TowerInfo("Archer",  "Лучник",        75, "Одна ціль, середня швидкість"),
+        new TowerInfo("Mage",    "Маг",          175, "Область ураження (AoE)"),
+        new TowerInfo("Freezer", "Заморожувач",  125, "Уповільнює ворогів"),
+        new TowerInfo("Cannon",  "Гарматник",    275, "Велика шкода, повільний")
     };
 
     // Enemy info for attacker panel (Ukrainian)

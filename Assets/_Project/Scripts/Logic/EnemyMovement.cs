@@ -30,6 +30,11 @@ public class EnemyMovement : MonoBehaviour
     void OnEnable()
     {
         ActiveEnemies.Add(this);
+        // Private non-serialized fields are lost after Instantiate — re-resolve from children
+        var fillT = transform.Find("HealthFill");
+        var bgT   = transform.Find("HealthBG");
+        if (fillT != null) healthBarFill = fillT;
+        if (bgT   != null) healthBarBG   = bgT;
     }
 
     void OnDisable()

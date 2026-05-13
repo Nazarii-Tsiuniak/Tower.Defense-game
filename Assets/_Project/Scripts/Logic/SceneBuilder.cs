@@ -14,6 +14,7 @@ public class SceneBuilder : MonoBehaviour
         CreateGridOverlay();
         CreateWaypointPath();
         CreateEnemyTemplates();
+        CreateBackgroundMusic();
     }
 
     void SetupCamera()
@@ -128,6 +129,7 @@ public class SceneBuilder : MonoBehaviour
         var borderSprite = Sprite.Create(borderTex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32f);
 
         var overlayParent = new GameObject("GridOverlay");
+        overlayParent.SetActive(false);  // hidden by default; shown only during tower placement
         for (int col = 0; col < GridManager.Cols; col++)
         {
             for (int row = 0; row < GridManager.Rows; row++)
@@ -190,5 +192,11 @@ public class SceneBuilder : MonoBehaviour
         em.SetupHealthBar(hpBg, hpFill);
 
         return go;
+    }
+
+    void CreateBackgroundMusic()
+    {
+        var musicGO = new GameObject("BackgroundMusic");
+        musicGO.AddComponent<BackgroundMusic>();
     }
 }

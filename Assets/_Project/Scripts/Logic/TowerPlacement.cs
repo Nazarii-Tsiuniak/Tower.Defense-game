@@ -8,12 +8,30 @@ public class TowerPlacement : MonoBehaviour
     private GameObject previewGO;
     private SpriteRenderer previewSR;
     private SpriteRenderer rangeIndicatorSR;
+    private GameObject gridOverlay;
+    private bool gridVisible = false;
+
+    void Start()
+    {
+        // Cache the grid overlay created by SceneBuilder
+        gridOverlay = GameObject.Find("GridOverlay");
+    }
+
+    void SetGridVisible(bool visible)
+    {
+        if (gridOverlay != null && gridVisible != visible)
+        {
+            gridOverlay.SetActive(visible);
+            gridVisible = visible;
+        }
+    }
 
     void Update()
     {
         if (GameManager.Instance == null || GameManager.Instance.State != GameState.Preparation)
         {
             HidePreview();
+            SetGridVisible(false);
             return;
         }
 
@@ -23,8 +41,11 @@ public class TowerPlacement : MonoBehaviour
         if (string.IsNullOrEmpty(selectedType))
         {
             HidePreview();
+            SetGridVisible(false);
             return;
         }
+
+        SetGridVisible(true);
 
         if (Mouse.current == null) return;
 
