@@ -11,6 +11,7 @@ public class SceneBuilder : MonoBehaviour
         EnsureObjectPooler();
         CreateManagers();
         CreateMapBackground();
+        CreateGridOverlay();
         CreateWaypointPath();
         CreateEnemyTemplates();
     }
@@ -20,9 +21,9 @@ public class SceneBuilder : MonoBehaviour
         Camera cam = Camera.main;
         if (cam != null)
         {
-            // Image is 1407x768; at PPU=96 it becomes ~14.65x8 world units
-            // Set orthographic size to 5 so the full map height (8 units) fits with padding
-            cam.orthographicSize = 5.0f;
+            // Grid is 22x12 cells, PPU=64 => world size 22x12
+            // orthographicSize = half-height = 12/2 = 6
+            cam.orthographicSize = 6.0f;
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.backgroundColor = new Color(0.06f, 0.08f, 0.06f);
         }
@@ -66,9 +67,9 @@ public class SceneBuilder : MonoBehaviour
             return;
         }
 
-        // Image is 1407x768. Use PPU=96 so height = 768/96 = 8 world units (matches grid height).
-        // Width = 1407/96 ≈ 14.65 world units (slightly wider than 12-wide grid — fine, covers border).
-        float ppu = 96f;
+        // Image is 1407x768, PPU=64 => world size = 1407/64 x 768/64 = 21.98 x 12
+        // Centered at (0,0): fits the 22x12 cell grid perfectly
+        float ppu = 64f;
         var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
             new Vector2(0.5f, 0.5f), ppu);
 
@@ -105,34 +106,50 @@ public class SceneBuilder : MonoBehaviour
         }
     }
 
+    // Semi-transparent grid overlay so player can see cells for tower placement
+    void CreateGridOverlay()
+    {
+        // Create a simple 1x1 white pixel sprite for cell outlines
+        var tex = new Texture2D(1, 1);
+        tex.filterMode = FilterMode.Point;
+        tex.SetPixel(0, 0, Color.white);
+        tex.Apply();
+        var cellSprite = Sprite.Create(tex, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+
+        // Border-only cell: use LineRenderer per cell is expensive; instead use a 32x32 border texture
+        var borderTex = new Texture2D(32, 32);
+        borderTex.filterMode = FilterMode.Point;
+        Color clear = new Color(0, 0, 0, 0);
+        Color line  = new Color(1f, 1f, 1f, 0.18f);
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 32; x++)
+                borderTex.SetPixel(x, y, (x == 0 || x == 31 || y == 0 || y == 31) ? line : clear);
+        borderTex.Apply();
+        var borderSprite = Sprite.Create(borderTex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32f);
+
+        var overlayParent = new GameObject("GridOverlay");
+        for (int col = 0; col < GridManager.Cols; col++)
+        {
+            for (int row = 0; row < GridManager.Rows; row++)
+            {
+                var cell = new GameObject("Cell_" + col + "_" + row);
+                cell.transform.SetParent(overlayParent.transform);
+                cell.transform.position = GridManager.CellToWorld(col, row);
+                var sr = cell.AddComponent<SpriteRenderer>();
+                sr.sprite = borderSprite;
+                sr.sortingOrder = 5;  // above background, below enemies/towers
+            }
+        }
+    }
+
     void CreateWaypointPath()
     {
-        // World coordinates derived directly from map.png (1407x768, PPU=96, centered at 0,0)
-        // Formula: worldX = pixelX/96 - 7.328,  worldY = 4.0 - pixelY/96
-        // Points follow the sandy path on the image: cave → winding → upper bridge → lower bridge → castle
-        Vector3[] waypoints = new Vector3[]
-        {
-            new Vector3(-6.5f,  0.72f, 0f),   // Cave entrance (left side)
-            new Vector3(-5.1f,  0.72f, 0f),   // Turn: right → down
-            new Vector3(-5.1f, -1.10f, 0f),   // Turn: down → left
-            new Vector3(-6.4f, -1.10f, 0f),   // Turn: left → down
-            new Vector3(-6.4f, -2.00f, 0f),   // Turn: down → right (bottom loop)
-            new Vector3(-2.8f, -2.00f, 0f),   // Turn: right → up
-            new Vector3(-2.8f,  0.83f, 0f),   // Turn: up → right (upper path)
-            new Vector3( 0.5f,  1.34f, 0f),   // Upper bridge (cross river)
-            new Vector3( 2.06f, 1.34f, 0f),   // After upper bridge → turn down
-            new Vector3( 2.06f,-1.68f, 0f),   // Turn: down → left (lower path)
-            new Vector3( 0.5f, -1.68f, 0f),   // Lower bridge (cross river)
-            new Vector3( 2.06f,-1.68f, 0f),   // After lower bridge → turn right
-            new Vector3( 5.70f,-1.68f, 0f),   // Castle entrance (right side)
-        };
-
         var pathGO = new GameObject("WaypointPath");
-        for (int i = 0; i < waypoints.Length; i++)
+        foreach (var wp in GridManager.WaypointCells)
         {
-            var waypointGO = new GameObject("WP_" + i);
+            var waypointGO = new GameObject("WP_" + wp.x + "_" + wp.y);
             waypointGO.transform.SetParent(pathGO.transform);
-            waypointGO.transform.position = waypoints[i];
+            waypointGO.transform.position = GridManager.CellToWorld(wp);
         }
         pathGO.AddComponent<WaypointPath>();
     }
