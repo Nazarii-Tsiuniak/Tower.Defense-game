@@ -129,9 +129,9 @@ public class SceneBuilder : MonoBehaviour
 
         Sprite bridgeSprite = SpriteGenerator.CreateBridgeTile();
 
-        // Bridge overlay at col 7, row 6 (path crosses river here)
-        Vector3 bridgePos = GridManager.CellToWorld(7, 6);
-        var bridgeGO = new GameObject("Bridge_7_6");
+        // Bridge overlay at col 7, row 5 (path crosses river here)
+        Vector3 bridgePos = GridManager.CellToWorld(7, 5);
+        var bridgeGO = new GameObject("Bridge_7_5");
         bridgeGO.transform.SetParent(riverParent.transform);
         bridgeGO.transform.position = bridgePos;
         var bridgeSR = bridgeGO.AddComponent<SpriteRenderer>();
