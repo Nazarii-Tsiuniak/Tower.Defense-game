@@ -10,10 +10,7 @@ public class SceneBuilder : MonoBehaviour
         EnsureEventSystem();
         EnsureObjectPooler();
         CreateManagers();
-        CreateMapBorder();
-        CreateGrid();
-        CreateRiver();
-        CreateDecorations();
+        CreateMapBackground();
         CreateWaypointPath();
         CreateEnemyTemplates();
     }
@@ -23,9 +20,11 @@ public class SceneBuilder : MonoBehaviour
         Camera cam = Camera.main;
         if (cam != null)
         {
-            cam.orthographicSize = 6.0f;
-            cam.transform.position = new Vector3(0, 0.5f, -10f);
-            cam.backgroundColor = new Color(0.10f, 0.14f, 0.10f);
+            // Image is 1407x768; at PPU=96 it becomes ~14.65x8 world units
+            // Set orthographic size to 5 so the full map height (8 units) fits with padding
+            cam.orthographicSize = 5.0f;
+            cam.transform.position = new Vector3(0f, 0f, -10f);
+            cam.backgroundColor = new Color(0.06f, 0.08f, 0.06f);
         }
     }
 
@@ -56,129 +55,52 @@ public class SceneBuilder : MonoBehaviour
         wsGO.AddComponent<WaveSpawner>();
     }
 
-    void CreateMapBorder()
+    void CreateMapBackground()
     {
-        Sprite borderSprite = SpriteGenerator.CreateMapBorder();
-        var borderParent = new GameObject("MapBorder");
-
-        // Place border tiles around the map
-        for (int col = -1; col <= GridManager.Cols; col++)
+        // Load the user-provided map image from Resources
+        Texture2D tex = Resources.Load<Texture2D>("Sprites/map_background");
+        if (tex == null)
         {
-            for (int row = -1; row <= GridManager.Rows; row++)
-            {
-                // Only border cells (not inside the grid)
-                if (col >= 0 && col < GridManager.Cols && row >= 0 && row < GridManager.Rows)
-                    continue;
-
-                Vector3 pos = GridManager.CellToWorld(col, row);
-                var tile = new GameObject("Border_" + col + "_" + row);
-                tile.transform.SetParent(borderParent.transform);
-                tile.transform.position = pos;
-                var sr = tile.AddComponent<SpriteRenderer>();
-                sr.sprite = borderSprite;
-                sr.sortingOrder = -1;
-            }
+            Debug.LogWarning("SceneBuilder: map_background.png not found in Resources/Sprites/. Falling back to procedural tiles.");
+            CreateProceduralFallback();
+            return;
         }
+
+        // Image is 1407x768. Use PPU=96 so height = 768/96 = 8 world units (matches grid height).
+        // Width = 1407/96 ≈ 14.65 world units (slightly wider than 12-wide grid — fine, covers border).
+        float ppu = 96f;
+        var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+            new Vector2(0.5f, 0.5f), ppu);
+
+        var bgGO = new GameObject("MapBackground");
+        var sr = bgGO.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = -10;
+
+        // Center of grid: CellToWorld spans col 0..11 → x from -5.5 to 5.5, center = 0
+        //                               row 0..7  → y from -3.5 to 3.5, center = 0
+        bgGO.transform.position = new Vector3(0f, 0f, 0f);
     }
 
-    void CreateGrid()
+    // Minimal fallback in case image is missing
+    void CreateProceduralFallback()
     {
         Sprite grassSprite = SpriteGenerator.CreateGrassTile();
-        Sprite pathSprite = SpriteGenerator.CreatePathTile();
+        Sprite pathSprite  = SpriteGenerator.CreatePathTile();
         Sprite waterSprite = SpriteGenerator.CreateWaterTile();
-        Sprite entrySprite = SpriteGenerator.CreateEntryMarker();
-        Sprite baseSprite = SpriteGenerator.CreateBaseMarker();
-
         var gridParent = new GameObject("Grid");
-
         for (int col = 0; col < GridManager.Cols; col++)
         {
             for (int row = 0; row < GridManager.Rows; row++)
             {
-                Vector3 pos = GridManager.CellToWorld(col, row);
-                bool isPath = GridManager.Instance != null && GridManager.Instance.IsPath(col, row);
-                bool isWater = GridManager.Instance != null && GridManager.Instance.IsWater(col, row);
-
                 var tile = new GameObject("Tile_" + col + "_" + row);
                 tile.transform.SetParent(gridParent.transform);
-                tile.transform.position = pos;
-
-                var sr = tile.AddComponent<SpriteRenderer>();
-                sr.sortingOrder = 0;
-
-                Vector2Int cell = new Vector2Int(col, row);
-                if (cell == GridManager.Instance.EntryCell)
-                    sr.sprite = entrySprite;
-                else if (cell == GridManager.Instance.BaseCell)
-                    sr.sprite = baseSprite;
-                else if (isWater)
-                    sr.sprite = waterSprite;
-                else if (isPath)
-                    sr.sprite = pathSprite;
-                else
-                    sr.sprite = grassSprite;
-            }
-        }
-    }
-
-    // Creates the river and bridge visuals
-    void CreateRiver()
-    {
-        if (GridManager.Instance == null) return;
-        var riverParent = new GameObject("River");
-
-        Sprite bridgeSprite = SpriteGenerator.CreateBridgeTile();
-
-        // Bridge overlay at col 7, row 5 (path crosses river here)
-        Vector3 bridgePos = GridManager.CellToWorld(7, 5);
-        var bridgeGO = new GameObject("Bridge_7_5");
-        bridgeGO.transform.SetParent(riverParent.transform);
-        bridgeGO.transform.position = bridgePos;
-        var bridgeSR = bridgeGO.AddComponent<SpriteRenderer>();
-        bridgeSR.sprite = bridgeSprite;
-        bridgeSR.sortingOrder = 1;
-    }
-
-    void CreateDecorations()
-    {
-        if (GridManager.Instance == null) return;
-
-        Sprite treeSprite = SpriteGenerator.CreateTreeSprite();
-        Sprite bushSprite = SpriteGenerator.CreateBushSprite();
-        Sprite flowerSprite = SpriteGenerator.CreateFlowerSprite();
-        Sprite rockSprite = SpriteGenerator.CreateRockSprite();
-
-        var decoParent = new GameObject("Decorations");
-        var rng = new System.Random(123);
-
-        for (int col = 0; col < GridManager.Cols; col++)
-        {
-            for (int row = 0; row < GridManager.Rows; row++)
-            {
-                if (GridManager.Instance.IsPath(col, row)) continue;
-                if (GridManager.Instance.IsWater(col, row)) continue;
-                if (rng.NextDouble() > 0.22) continue;
-
-                Vector3 pos = GridManager.CellToWorld(col, row);
-                pos.x += (float)(rng.NextDouble() - 0.5) * 0.25f;
-                pos.y += (float)(rng.NextDouble() - 0.5) * 0.25f;
-
-                var decoGO = new GameObject("Deco_" + col + "_" + row);
-                decoGO.transform.SetParent(decoParent.transform);
-                decoGO.transform.position = pos;
-
-                var sr = decoGO.AddComponent<SpriteRenderer>();
-                sr.sortingOrder = 1;
-
-                float roll = (float)rng.NextDouble();
-                if (roll < 0.25f)
-                    sr.sprite = treeSprite;
-                else if (roll < 0.45f)
-                    sr.sprite = bushSprite;
-                else if (roll < 0.70f)
-                    sr.sprite = flowerSprite;
-                else
-                    sr.sprite = rockSprite;
+                tile.transform.position = GridManager.CellToWorld(col, row);
+                var tsr = tile.AddComponent<SpriteRenderer>();
+                tsr.sortingOrder = 0;
+                if (GridManager.Instance.IsWater(col, row))       tsr.sprite = waterSprite;
+                else if (GridManager.Instance.IsPath(col, row))   tsr.sprite = pathSprite;
+                else                                               tsr.sprite = grassSprite;
             }
         }
     }
