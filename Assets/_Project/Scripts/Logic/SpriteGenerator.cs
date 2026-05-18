@@ -1080,37 +1080,6 @@ public static class SpriteGenerator
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
-        var tex = new Texture2D(s, s);
-        tex.filterMode = FilterMode.Point;
-
-        // Clear
-        for (int y = 0; y < s; y++)
-            for (int x = 0; x < s; x++)
-                tex.SetPixel(x, y, Color.clear);
-
-        switch (towerName)
-        {
-            case "Archer":
-                DrawArcherTower(tex, s);
-                break;
-            case "Mage":
-                DrawMageTower(tex, s);
-                break;
-            case "Freezer":
-                DrawFreezerTower(tex, s);
-                break;
-            case "Cannon":
-                DrawCannonTower(tex, s);
-                break;
-            default:
-                DrawGenericTower(tex, s, Color.gray, Color.black);
-                break;
-        }
-
-        tex.Apply();
-        return Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), s);
-    }
-
     // ==================== PROJECTILE ====================
     public static Sprite CreateProjectileSprite(Color color)
     {
