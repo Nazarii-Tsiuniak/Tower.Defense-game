@@ -158,12 +158,102 @@ public class EnemyMovement : MonoBehaviour
     void Die()
     {
         isDead = true;
+        SpawnDeathEffect();
         if (GameManager.Instance != null)
             GameManager.Instance.EnemyKilled(rewardGold);
         if (WaveSpawner.Instance != null)
             WaveSpawner.Instance.EnemyEliminated();
         if (ObjectPooler.Instance != null)
             ObjectPooler.Instance.ReturnToPool(gameObject);
+    }
+
+    void SpawnDeathEffect()
+    {
+        switch (enemyType)
+        {
+            case "Goblin": SpawnGoblinDeath(); break;
+            case "Orc":    SpawnOrcDeath();    break;
+            case "Ghost":  SpawnGhostDeath();  break;
+            default:       SpawnGenericDeath(Color.red, 6); break;
+        }
+    }
+
+    // ── Goblin: green + gold coin burst ───────────────────────────────────
+    void SpawnGoblinDeath()
+    {
+        SpawnParticleBurst(transform.position, new Color(0.30f, 0.72f, 0.22f), 8, 3.5f, 0.55f);
+        SpawnParticleBurst(transform.position + Vector3.up * 0.1f,
+            new Color(1.0f, 0.82f, 0.18f), 5, 2.5f, 0.45f); // gold coins
+        SpawnFloatingText(transform.position, "💀", 0.5f);
+    }
+
+    // ── Orc: brown + metal sparks + screen shake feel ─────────────────────
+    void SpawnOrcDeath()
+    {
+        SpawnParticleBurst(transform.position, new Color(0.42f, 0.55f, 0.28f), 12, 4.5f, 0.70f);
+        SpawnParticleBurst(transform.position, new Color(0.65f, 0.65f, 0.70f), 8, 3.0f, 0.40f); // metal
+        SpawnParticleBurst(transform.position, new Color(0.80f, 0.18f, 0.10f), 5, 2.5f, 0.35f); // blood
+        SpawnFloatingText(transform.position, "☠", 0.6f);
+    }
+
+    // ── Ghost: dissolve into blue sparkle wisps ───────────────────────────
+    void SpawnGhostDeath()
+    {
+        SpawnParticleBurst(transform.position, new Color(0.78f, 0.82f, 0.95f), 6, 2.5f, 0.80f);
+        SpawnParticleBurst(transform.position, new Color(0.25f, 0.45f, 1.00f), 10, 4.0f, 0.90f); // blue wisps
+        // Extra upward wisps to simulate dissolving
+        for (int i = 0; i < 4; i++)
+            SpawnSingleParticle(transform.position + Vector3.right * (i - 2) * 0.3f,
+                new Color(0.55f, 0.70f, 1.00f, 0.8f),
+                new Vector2(Random.Range(-0.5f, 0.5f), Random.Range(1.5f, 3.0f)),
+                0.7f + Random.value * 0.5f);
+        SpawnFloatingText(transform.position, "👻", 0.6f);
+    }
+
+    void SpawnGenericDeath(Color col, int count)
+    {
+        SpawnParticleBurst(transform.position, col, count, 3f, 0.5f);
+    }
+
+    // ── Particle helpers ─────────────────────────────────────────────────
+    static void SpawnParticleBurst(Vector3 pos, Color color, int count, float speed, float life)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            float mag   = Random.Range(0.3f, 1f) * speed;
+            var vel = new Vector2(Mathf.Cos(angle) * mag, Mathf.Sin(angle) * mag);
+            SpawnSingleParticle(pos, color, vel, life * Random.Range(0.7f, 1.3f));
+        }
+    }
+
+    static void SpawnSingleParticle(Vector3 pos, Color color, Vector2 velocity, float life)
+    {
+        var go = new GameObject("DeathParticle");
+        go.transform.position = pos;
+
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = SpriteGenerator.CreateParticleSprite(color, 6);
+        sr.sortingOrder = 15;
+
+        go.AddComponent<DeathParticle>().Init(velocity, life, color);
+    }
+
+    static void SpawnFloatingText(Vector3 pos, string text, float life)
+    {
+        var go = new GameObject("DeathText");
+        go.transform.position = pos + Vector3.up * 0.3f;
+
+        // We use a world-space TextMesh for a quick floating label
+        var tm = go.AddComponent<TextMesh>();
+        tm.text = text;
+        tm.fontSize = 28;
+        tm.anchor = TextAnchor.MiddleCenter;
+        tm.alignment = TextAlignment.Center;
+        tm.characterSize = 0.06f;
+        go.GetComponent<MeshRenderer>().sortingOrder = 16;
+
+        go.AddComponent<FloatingText>().Init(life);
     }
 
     void ReachBase()
